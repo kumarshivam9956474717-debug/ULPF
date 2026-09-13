@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 
 interface HeaderProps {
@@ -11,9 +11,11 @@ export const Header: React.FC<HeaderProps> = ({ isBackendHealthy, version = "1.0
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-lg bg-sky-600 flex items-center justify-center text-white shadow-sm shadow-sky-200">
-          <Shield className="w-5 h-5" />
-        </div>
+        <img
+          src="/omnilogix-logo.png"
+          alt="OmniLogix Logo"
+          className="h-10 w-auto object-contain rounded-lg border border-slate-100 shadow-sm"
+        />
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-base font-bold text-slate-900 tracking-tight">OmniLogix</h1>

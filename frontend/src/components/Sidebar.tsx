@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Sparkles,
   FlaskConical,
-  Shield,
 } from 'lucide-react';
 
 
@@ -36,8 +35,12 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800">
       <div className="p-4 border-b border-slate-800/80">
-        <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          <Shield className="w-4 h-4 text-sky-400" />
+        <div className="flex items-center space-x-2.5 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+          <img
+            src="/omnilogix-logo.png"
+            alt="OmniLogix"
+            className="w-6 h-6 object-contain rounded bg-white p-0.5"
+          />
           <span>OmniLogix Core</span>
         </div>
       </div>
