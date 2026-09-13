@@ -55,7 +55,7 @@ export const Dashboard: React.FC = () => {
             <span className="text-xs text-slate-500 font-medium">SIH 2026 Problem Statement SIH26156</span>
           </div>
           <h2 className="text-xl font-bold text-slate-900 mt-1">
-            Universal Log Pre-processing Framework (ULPF)
+            OmniLogix — Universal Log Pre-processing Framework (ULPF)
           </h2>
           <p className="text-sm text-slate-600 mt-1">
             Vendor-agnostic, scalable, extensible, and air-gapped perimeter network-device log normalizer.

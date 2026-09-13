@@ -71,7 +71,7 @@ export const SystemStatusCard: React.FC<SystemStatusCardProps> = ({
           <div className="flex items-center space-x-2">
             <Cpu className="w-4 h-4 text-sky-600 shrink-0" />
             <span className="font-mono text-sm font-semibold text-slate-800">
-              {status?.service || 'ULPF Engine'}
+              {status?.service || 'OmniLogix Engine'}
             </span>
           </div>
           <span className="text-[11px] text-slate-400 mt-1 block font-mono">v{status?.version || '1.0.0'}</span>

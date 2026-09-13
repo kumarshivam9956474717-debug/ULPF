@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ isBackendHealthy, version = "1.0
         </div>
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-base font-bold text-slate-900 tracking-tight">ULPF</h1>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight">OmniLogix</h1>
             <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-medium border border-slate-200">
               v{version}
             </span>
@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({ isBackendHealthy, version = "1.0
               SIH26156 Prototype
             </span>
           </div>
-          <p className="text-xs text-slate-500 hidden md:block">Universal Log Pre-processing Framework</p>
+          <p className="text-xs text-slate-500 hidden md:block">Universal Log Intelligence & Pre-processing Framework (ULPF)</p>
         </div>
       </div>
 

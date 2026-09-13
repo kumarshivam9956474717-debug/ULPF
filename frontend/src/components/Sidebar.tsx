@@ -38,7 +38,7 @@ export const Sidebar: React.FC = () => {
       <div className="p-4 border-b border-slate-800/80">
         <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
           <Shield className="w-4 h-4 text-sky-400" />
-          <span>ULPF Control Center</span>
+          <span>OmniLogix Core</span>
         </div>
       </div>
 
