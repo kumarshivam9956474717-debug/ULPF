@@ -45,7 +45,7 @@ const CSE_ENTITIES = [
 export const EvaluationWorkspace: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
-  const [statusMsg, setStatusMsg] = useState<string>('Ready to execute 1-Click SIH Demonstration Pipeline.');
+  const [statusMsg, setStatusMsg] = useState<string>('Ready to execute Live Evaluation & Validation Pipeline.');
   const [demoStatus, setDemoStatus] = useState<any>(null);
   const [dataQuality, setDataQuality] = useState<any>(null);
   const [selectedEntityId, setSelectedEntityId] = useState<string>('CSE-ALPHA-01');
@@ -162,7 +162,7 @@ export const EvaluationWorkspace: React.FC = () => {
       const res = await runDemoPipeline();
       setAssessment(res.entity_assessment);
       setCurrentStep(9);
-      setStatusMsg('Step 9/9: SIH Demonstration Pipeline Complete! All 10 SIH Scenarios validated.');
+      setStatusMsg('Step 9/9: Evaluation Pipeline Complete! All 10 Benchmark Scenarios validated.');
       await loadAllStatus();
     } catch (err) {
       console.error('Full demonstration execution error:', err);
@@ -265,10 +265,10 @@ export const EvaluationWorkspace: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-              1-Click SIH Demonstration Workspace
+              Live Evaluation & Validation Lab
             </h1>
             <p className="text-slate-400 text-sm">
-              SIH Problem Statement SIH26156 (NTRO) — Guided End-to-End Evaluation Workflow
+              Enterprise Scenario Testing & Threat Validation Pipeline (NTRO Benchmark)
             </p>
           </div>
         </div>
@@ -280,7 +280,7 @@ export const EvaluationWorkspace: React.FC = () => {
             className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold px-5 py-2.5 rounded-lg shadow-lg shadow-cyan-900/30 transition"
           >
             <Play className="w-4 h-4 fill-slate-950" />
-            <span>Start Demonstration</span>
+            <span>Run Benchmark Pipeline</span>
           </button>
 
           <button

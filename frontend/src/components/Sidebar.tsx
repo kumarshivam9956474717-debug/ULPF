@@ -8,17 +8,18 @@ import {
   BarChart3,
   Server,
   Settings,
-  FileCode2,
   SlidersHorizontal,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  FlaskConical,
+  Shield,
 } from 'lucide-react';
 
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/demo', label: 'SIH Demonstration', icon: Sparkles },
+  { path: '/demo', label: 'Live Evaluation Lab', icon: FlaskConical },
   { path: '/supervisory', label: 'Supervisory Assessment', icon: ShieldCheck },
   { path: '/security-analytics', label: 'Security Analytics', icon: ShieldAlert },
   { path: '/ingestion', label: 'Log Ingestion', icon: ArrowDownToLine },
@@ -36,8 +37,8 @@ export const Sidebar: React.FC = () => {
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 border-r border-slate-800">
       <div className="p-4 border-b border-slate-800/80">
         <div className="flex items-center space-x-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          <FileCode2 className="w-4 h-4 text-sky-400" />
-          <span>Architecture Core</span>
+          <Shield className="w-4 h-4 text-sky-400" />
+          <span>ULPF Control Center</span>
         </div>
       </div>
 
