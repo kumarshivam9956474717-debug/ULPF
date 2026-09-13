@@ -1,0 +1,4 @@
+timestamp,vendor,device_type,src_ip,spt,dst_ip,dpt,proto,action,severity,username,message
+2026-09-10T09:26:00Z,Juniper,router,10.0.1.5,49152,198.51.100.1,80,TCP,permit,informational,bgp_peer,Border gateway egress pass
+2026-09-10T09:26:05Z,Juniper,router,203.0.113.99,50000,10.0.1.1,23,TCP,deny,high,unknown,Telnet port access blocked by perimeter filter
+2026-09-10T09:26:10Z,Juniper,router,10.0.2.14,58120,8.8.8.8,53,UDP,permit,informational,dns_client,Outbound DNS lookup query

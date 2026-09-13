@@ -1,0 +1,2 @@
+LEEF:1.0|IBM|QRadar Network Security|5.4|IntrusionAlert|src=198.51.100.40	dst=10.0.0.12	srcPort=39120	dstPort=445	proto=TCP	action=block	severity=8	usrName=compromised_host	attack=SMBv1.Buffer.Overflow	interface=eth1	rule_id=40019
+LEEF:2.0|Trend Micro|Deep Discovery Inspector|5.8|MalwareC2|src=10.0.2.88	dst=203.0.113.190	srcPort=49210	dstPort=8080	proto=TCP	action=alert	severity=9	usrName=finance_workstation	threat_name=Backdoor.Win32.CobaltStrike	devname=DDI-PERIMETER-01

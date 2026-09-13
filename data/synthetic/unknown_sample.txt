@@ -1,0 +1,3 @@
+Random unstructured text dump from an unidentified proprietary system: 991283-ERROR-X [kernel failure: 0x88910248]
+This line does not match syslog, json, csv, cef, leef, or xml.
+Another arbitrary raw telemetry string without standard perimeter headers.

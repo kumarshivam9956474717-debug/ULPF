@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Node / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+dist/
+dist-ssr/
+*.local
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker / Database Data
+pgdata/
+postgres_data/
+*.db
+*.sqlite
+*.sqlite3
+demo.db
+**/demo.db
+
+# Logs & Runtime
+logs/
+*.log
+!data/synthetic/*.log
+!data/raw/*.log
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Processed & Generated Exports
+data/processed/*.parquet
+data/processed/*.csv
+data/processed/*.json
+
+# OS & Agents
+.DS_Store
+Thumbs.db
+.agents/
+.system_generated/
+

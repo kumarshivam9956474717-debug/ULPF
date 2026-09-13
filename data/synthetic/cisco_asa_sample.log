@@ -1,0 +1,3 @@
+<166>Sep 10 09:15:32 asa-edge-01 %ASA-6-302013: Built inbound TCP connection 981245 for outside:198.51.100.25/54321 (198.51.100.25/54321) to dmz:10.0.1.10/443 (10.0.1.10/443)
+<163>Sep 10 09:16:01 asa-edge-01 %ASA-3-106023: Deny tcp src outside:203.0.113.88/49152 dst inside:10.0.2.15/22 by access-group "OUTSIDE-IN" [0x0, 0x0]
+<166>Sep 10 09:17:45 asa-edge-01 %ASA-6-302014: Teardown TCP connection 981245 for outside:198.51.100.25/54321 to dmz:10.0.1.10/443 duration 0:02:13 bytes 4512 TCP FINs

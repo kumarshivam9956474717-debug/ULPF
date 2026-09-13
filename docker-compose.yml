@@ -1,0 +1,84 @@
+services:
+  ulpf-db:
+    image: postgres:16-alpine
+    container_name: ulpf_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ulpf_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ulpf_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ulpf_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ulpf_admin} -d ${POSTGRES_DB:-ulpf_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      ulpf-network:
+        aliases:
+          - db
+          - ulpf-db
+
+  ulpf-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ulpf_backend
+    restart: unless-stopped
+    depends_on:
+      ulpf-db:
+        condition: service_healthy
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEBUG=${DEBUG:-False}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ulpf_admin}:${POSTGRES_PASSWORD:-ulpf_dev_password}@ulpf-db:5432/${POSTGRES_DB:-ulpf_db}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://localhost}
+      - AIR_GAPPED_MODE=True
+      - SYSLOG_ENABLED=${SYSLOG_ENABLED:-True}
+      - SYSLOG_UDP_PORT=${SYSLOG_UDP_PORT:-1514}
+      - SYSLOG_TCP_PORT=${SYSLOG_TCP_PORT:-1514}
+      - SYSLOG_TLS_PORT=${SYSLOG_TLS_PORT:-16514}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+      - "${SYSLOG_UDP_PORT:-1514}:${SYSLOG_UDP_PORT:-1514}/udp"
+      - "${SYSLOG_TCP_PORT:-1514}:${SYSLOG_TCP_PORT:-1514}"
+      - "${SYSLOG_TLS_PORT:-16514}:${SYSLOG_TLS_PORT:-16514}"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      ulpf-network:
+        aliases:
+          - backend
+          - ulpf-backend
+
+  ulpf-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ulpf_frontend
+    restart: unless-stopped
+    depends_on:
+      ulpf-backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    networks:
+      - ulpf-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  ulpf-network:
+    driver: bridge

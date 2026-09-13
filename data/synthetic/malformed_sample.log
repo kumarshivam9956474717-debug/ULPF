@@ -1,0 +1,3 @@
+CEF:0|Corrupt Vendor|Bad Product||Missing Fields Here
+{"timestamp": "2026-09-10", "incomplete_json": true, "broken_syntax": [1, 2, 
+<SecurityEvent><UnclosedTag>Truncated XML content

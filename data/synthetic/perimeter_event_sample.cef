@@ -1,0 +1,2 @@
+CEF:0|Check Point|VPN-1 & FireWall-1|NGX R80.40|drop|Drop Security Rule|High|src=198.51.100.77 dst=10.0.1.25 spt=55412 dpt=3389 proto=TCP act=drop msg=Unauthorized RDP connection attempted duser=admin cs1Label=PolicyRule cs1=Cleanup_Rule deviceDirection=0
+CEF:0|Imperva|Incapsula WAF|2026.1|100021|Cross-Site Scripting Blocked|Medium|src=203.0.113.12 dst=10.0.1.80 spt=44120 dpt=443 proto=TCP act=block msg=XSS script injection vector identified in URI parameter suser=attacker_probe request=/search?q=<script>

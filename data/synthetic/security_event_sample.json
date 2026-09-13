@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-09-10T09:25:00Z",
+  "vendor": "Cloudflare",
+  "product": "Magic Firewall",
+  "device_type": "firewall",
+  "hostname": "edge-pop-bom01",
+  "source_ip": "198.51.100.155",
+  "source_port": 61244,
+  "destination_ip": "203.0.113.80",
+  "destination_port": 443,
+  "protocol": "TCP",
+  "action": "block",
+  "outcome": "failure",
+  "severity": "high",
+  "event_type": "ddos_mitigation",
+  "category": "l4_syn_flood",
+  "rule_id": "RULE-SYN-PROTECT-01",
+  "threat_name": "TCP SYN Flood Anomaly",
+  "message": "Packet rate exceeded perimeter threshold of 50,000 pps",
+  "user": "anonymous",
+  "telemetry": {
+    "rate_pps": 84200,
+    "drop_reason": "syn_cookie_unresponsive",
+    "asn": 13335,
+    "colo_code": "BOM"
+  },
+  "tags": ["perimeter", "edge", "ddos-auto-shield"]
+}
