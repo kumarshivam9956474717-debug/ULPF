@@ -15,16 +15,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application source code
-COPY . .
+# Copy backend application source code
+COPY backend/ .
 
 # Expose backend API port and Syslog listener ports
 EXPOSE 8000 1514/udp 1514/tcp 16514/tcp
 
-# Run FastAPI with uvicorn supporting dynamic PORT env var
+# Run FastAPI with uvicorn supporting dynamic PORT env var (Render/Railway default)
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
-
