@@ -1171,6 +1171,69 @@ export async function fetchDemoDataQuality(): Promise<any> {
   return response.json();
 }
 
+// ----------------------------------------------------------------------
+// Modular Parser Registry API Services
+// ----------------------------------------------------------------------
 
+export interface ParserVersionItem {
+  version: string;
+  checksum: string;
+  configuration?: Record<string, any>;
+  active: boolean;
+  id?: string;
+  parser_id?: string;
+  created_at?: string;
+}
 
+export interface ParserItem {
+  id: string;
+  parser_id: string;
+  name: string;
+  vendor: string;
+  product?: string;
+  device_type?: string;
+  supported_formats: string[];
+  description?: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  versions: ParserVersionItem[];
+}
 
+export interface ParserCreatePayload {
+  parser_id: string;
+  name: string;
+  vendor: string;
+  product?: string;
+  device_type?: string;
+  supported_formats: string[];
+  description?: string;
+  enabled?: boolean;
+  initial_version?: {
+    version: string;
+    checksum: string;
+    active: boolean;
+    configuration?: Record<string, any>;
+  };
+}
+
+export async function fetchParsers(): Promise<ParserItem[]> {
+  const response = await fetch('/api/v1/parsers');
+  if (!response.ok) {
+    throw new Error(`Failed to fetch parsers: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function registerParser(payload: ParserCreatePayload): Promise<ParserItem> {
+  const response = await fetch('/api/v1/parsers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to register parser' }));
+    throw new Error(err.detail || `Registration failed with status: ${response.status}`);
+  }
+  return response.json();
+}
