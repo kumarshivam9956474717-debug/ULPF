@@ -10,6 +10,14 @@ from app.services.syslog.manager import syslog_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Enforce active air-gap egress controls if configured
+    if settings.AIR_GAPPED_MODE:
+        try:
+            from app.core.airgap import install_airgap_guard
+            install_airgap_guard()
+        except Exception:
+            pass
+
     # Application startup: ensure database tables exist and load active configurable log parsers from DB
     try:
         from app.core.database import init_db, SessionLocal
