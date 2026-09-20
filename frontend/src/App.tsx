@@ -1,8 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { Login } from './pages/Login';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Ingestion } from './pages/Ingestion';
@@ -22,15 +20,7 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
+          <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="demo" element={<EvaluationWorkspace />} />
             <Route path="supervisory" element={<SupervisoryAssessment />} />
@@ -43,8 +33,10 @@ export const App: React.FC = () => {
             <Route path="analytics" element={<Analytics />} />
             <Route path="sources" element={<Sources />} />
             <Route path="settings" element={<SystemSettings />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
+          {/* Direct any legacy /login link or unknown routes straight to Dashboard */}
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
