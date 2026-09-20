@@ -39,7 +39,10 @@ def create_resilient_engine():
         return eng
     except Exception as e:
         logger.warning(f"PostgreSQL connection unavailable ({e}). Falling back to local SQLite database.")
-        sqlite_url = "sqlite:///./demo.db"
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parents[3]
+        db_path = (repo_root / "demo.db").resolve()
+        sqlite_url = f"sqlite:///{db_path.as_posix()}"
         return create_engine(
             sqlite_url,
             connect_args={"check_same_thread": False},

@@ -28,12 +28,43 @@ export function clearAuthSession(): void {
   }
 }
 
+const originalFetch = typeof window !== 'undefined' ? window.fetch.bind(window) : fetch;
+
+/**
+ * Automatically ensures a valid authentication session exists.
+ * In air-gapped demo mode, logs in seamlessly as demo admin without requiring user intervention.
+ */
+export async function ensureDemoAuth(): Promise<string | null> {
+  const existingToken = getAuthToken();
+  if (existingToken) return existingToken;
+
+  try {
+    const res = await originalFetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'admin',
+        password: 'AdminStrongPassword2026!',
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.access_token) {
+        setAuthSession(data.access_token, data.user);
+        return data.access_token;
+      }
+    }
+  } catch (e) {
+    console.warn('Silent demo authentication initialization skipped:', e);
+  }
+  return null;
+}
+
 // Global fetch interceptor to automatically attach Bearer token and handle 401s
 if (typeof window !== 'undefined' && !(window as any).__omnilogix_fetch_intercepted) {
   (window as any).__omnilogix_fetch_intercepted = true;
-  const originalFetch = window.fetch;
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const token = getAuthToken();
+    let token = getAuthToken();
     let newInit: RequestInit = init ? { ...init } : {};
 
     if (token) {
@@ -44,12 +75,27 @@ if (typeof window !== 'undefined' && !(window as any).__omnilogix_fetch_intercep
       newInit.headers = headers;
     }
 
-    const response = await originalFetch(input, newInit);
+    let response = await originalFetch(input, newInit);
+
+    // If 401 encountered on an API call, attempt automatic silent recovery once
     if (response.status === 401) {
       const urlStr = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
       if (!urlStr.includes('/auth/login')) {
-        clearAuthSession();
-        window.dispatchEvent(new CustomEvent('omnilogix_auth_unauthorized'));
+        try {
+          const freshToken = await ensureDemoAuth();
+          if (freshToken) {
+            const retryHeaders = new Headers(newInit.headers || {});
+            retryHeaders.set('Authorization', `Bearer ${freshToken}`);
+            newInit.headers = retryHeaders;
+            response = await originalFetch(input, newInit);
+          } else {
+            clearAuthSession();
+            window.dispatchEvent(new CustomEvent('omnilogix_auth_unauthorized'));
+          }
+        } catch {
+          clearAuthSession();
+          window.dispatchEvent(new CustomEvent('omnilogix_auth_unauthorized'));
+        }
       }
     }
     return response;

@@ -30,6 +30,7 @@ import {
   fetchEntityAssessment,
   fetchEvidenceChain,
   submitHumanReview,
+  ensureDemoAuth,
   EntityAssessment,
   EvidenceChain,
 } from '../services/api';
@@ -120,6 +121,7 @@ export const EvaluationWorkspace: React.FC = () => {
     setCurrentStep(stepNum);
     setLoading(true);
     try {
+      await ensureDemoAuth();
       if (stepNum === 1) {
         setStatusMsg('Loading synthetic multi-CSE evaluation dataset...');
         await loadDemoData();
@@ -131,9 +133,9 @@ export const EvaluationWorkspace: React.FC = () => {
         setStatusMsg('Pipeline execution completed.');
       }
       await loadAllStatus();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Step execution error:', err);
-      setStatusMsg('Error executing step.');
+      setStatusMsg(err?.message ? `Step execution error: ${err.message}` : 'Error executing step.');
     } finally {
       setLoading(false);
     }
@@ -156,6 +158,7 @@ export const EvaluationWorkspace: React.FC = () => {
     setCurrentStep(1);
     setStatusMsg('Step 1/9: Initializing & loading synthetic evaluation dataset...');
     try {
+      await ensureDemoAuth();
       await loadDemoData();
       setCurrentStep(3);
       setStatusMsg('Step 3/9: Executing UES Normalization & Security Analytics...');
@@ -164,9 +167,9 @@ export const EvaluationWorkspace: React.FC = () => {
       setCurrentStep(9);
       setStatusMsg('Step 9/9: Evaluation Pipeline Complete! All 10 Benchmark Scenarios validated.');
       await loadAllStatus();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Full demonstration execution error:', err);
-      setStatusMsg('Evaluation execution error encountered.');
+      setStatusMsg(err?.message ? `Evaluation execution error: ${err.message}` : 'Evaluation execution error encountered.');
     } finally {
       setLoading(false);
     }
@@ -175,14 +178,15 @@ export const EvaluationWorkspace: React.FC = () => {
   const handleResetDemo = async () => {
     setLoading(true);
     try {
+      await ensureDemoAuth();
       await resetDemo();
       setAssessment(null);
       setCurrentStep(1);
       setStatusMsg('Synthetic evaluation environment reset cleanly.');
       await loadAllStatus();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Reset error:', err);
-      setStatusMsg('Error resetting evaluation environment.');
+      setStatusMsg(err?.message ? `Reset error: ${err.message}` : 'Error resetting evaluation environment.');
     } finally {
       setLoading(false);
     }
