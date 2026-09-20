@@ -1,7 +1,7 @@
 # OmniLogix SIH Deployment Requirement Traceability Matrix
 **Universal Log Pre-Processing Framework (ULPF)**  
 **SIH Problem Statement:** SIH26156 (NTRO) — *Theme: Blockchain & Cybersecurity*  
-**Phase:** Step 6 — Production Deployment, Docker & High-Availability Hardening  
+**Specification:** NTRO Deployment Requirements Traceability Matrix  
 **Verification Level:** Rigorous Evidence-Based Verification  
 
 ---

@@ -1,7 +1,7 @@
 # OmniLogix Known Limitations & Operational Boundaries
 **Universal Log Pre-Processing Framework (ULPF)**  
 **SIH Problem Statement:** `SIH26156` (NTRO) — *Theme: Blockchain & Cybersecurity*  
-**Phase:** Step 7 — Final SIH Evaluation Readiness  
+**Specification:** Operational Boundaries & Architectural Roadmap  
 **Integrity Rule:** Absolute Transparency (Never convert architectural designs into implemented claims).
 
 ---

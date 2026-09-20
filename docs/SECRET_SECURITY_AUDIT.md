@@ -1,7 +1,7 @@
 # OmniLogix Secret & Credential Security Audit
 **Universal Log Pre-Processing Framework (ULPF)**  
 **SIH 2026 Problem Statement:** SIH26156 (NTRO) — *Theme: Blockchain & Cybersecurity*  
-**Evaluation Phase:** Step 6 — Production Deployment, Docker & High-Availability Hardening  
+**Specification:** Cryptographic Secret Management & Security Audit  
 **Audit Scope:** Full Repository Static Analysis for Hardcoded Secrets, Tokens, and Credentials  
 
 ---
