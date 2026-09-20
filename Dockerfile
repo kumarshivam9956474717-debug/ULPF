@@ -25,7 +25,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy backend application source code
 COPY backend/ .
-COPY demo.db ./demo.db
 
 # Create necessary directories and set ownership for unprivileged execution
 RUN mkdir -p /app/data/raw /app/data/processed /app/data/synthetic && \
