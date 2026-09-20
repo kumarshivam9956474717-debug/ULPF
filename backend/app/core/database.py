@@ -45,7 +45,7 @@ def create_resilient_engine():
         sqlite_url = f"sqlite:///{db_path.as_posix()}"
         return create_engine(
             sqlite_url,
-            connect_args={"check_same_thread": False},
+            connect_args={"check_same_thread": False, "timeout": 60},
             pool_pre_ping=True,
         )
 

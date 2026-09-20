@@ -5,6 +5,7 @@ Provides administrative controls to safely load, reset, run, and audit
 the synthetic demonstration environment (Scenarios A through J).
 """
 
+import logging
 from typing import Optional, Callable
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -20,6 +21,7 @@ from app.models.normalized_event import NormalizedEvent
 from app.models.log_source import LogSource
 from app.models.supervisory import EntityAssessment, CapabilityAssessment, SupervisoryIndicator, ReviewSample, SupervisoryReview
 
+logger = logging.getLogger("ulpf.demo")
 router = APIRouter()
 generator = DemoDatasetGenerator()
 validation_engine = ValidationEngine()
@@ -73,28 +75,36 @@ def reset_demo_environment(
     """
     Safely resets synthetic demonstration records without destroying system configuration.
     """
-    # Delete demo supervisory indicators & reviews
-    db.query(SupervisoryReview).delete()
-    db.query(ReviewSample).delete()
-    db.query(SupervisoryIndicator).delete()
-    db.query(CapabilityAssessment).delete()
-    db.query(EntityAssessment).delete()
+    try:
+        # Delete demo supervisory indicators & reviews
+        db.query(SupervisoryReview).delete()
+        db.query(ReviewSample).delete()
+        db.query(SupervisoryIndicator).delete()
+        db.query(CapabilityAssessment).delete()
+        db.query(EntityAssessment).delete()
 
-    # Delete demo raw and normalized events
-    db.query(NormalizedEvent).filter(NormalizedEvent.raw_event_id.like("demo-raw-%")).delete(synchronize_session=False)
-    db.query(RawEvent).filter(RawEvent.raw_event_id.like("demo-raw-%")).delete(synchronize_session=False)
-    db.commit()
+        # Delete demo raw and normalized events
+        db.query(NormalizedEvent).filter(NormalizedEvent.raw_event_id.like("demo-raw-%")).delete(synchronize_session=False)
+        db.query(RawEvent).filter(RawEvent.raw_event_id.like("demo-raw-%")).delete(synchronize_session=False)
+        db.commit()
 
-    _demo_state_cache["loaded"] = False
-    _demo_state_cache["total_raw_events"] = 0
-    _demo_state_cache["total_normalized_events"] = 0
-    _demo_state_cache["scenarios_loaded"] = []
+        _demo_state_cache["loaded"] = False
+        _demo_state_cache["total_raw_events"] = 0
+        _demo_state_cache["total_normalized_events"] = 0
+        _demo_state_cache["scenarios_loaded"] = []
 
-    return {
-        "status": "SUCCESS",
-        "message": "Synthetic demonstration dataset reset successfully.",
-        "isolated_mode": "DEMO_MODE_ACTIVE",
-    }
+        return {
+            "status": "SUCCESS",
+            "message": "Synthetic demonstration dataset reset successfully.",
+            "isolated_mode": "DEMO_MODE_ACTIVE",
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error resetting demo environment: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error during demo reset: {str(e)}"
+        )
 
 
 @router.post("/load")
@@ -105,72 +115,80 @@ def load_demo_dataset(
     """
     Generates and ingests synthetic demonstration data covering Scenarios A-J across 5 CSE entities.
     """
-    dataset = generator.generate_demo_dataset()
+    try:
+        dataset = generator.generate_demo_dataset()
 
-    # Insert Log Sources
-    for s in dataset["log_sources"]:
-        existing = db.query(LogSource).filter(LogSource.source_id == s["source_id"]).first()
-        if not existing:
-            src = LogSource(
-                source_id=s["source_id"],
-                hostname=s["hostname"],
-                vendor=s["vendor"],
-                device_type=s["device_type"],
-                enabled=s["enabled"],
-            )
-            db.add(src)
+        # Insert Log Sources
+        for s in dataset["log_sources"]:
+            existing = db.query(LogSource).filter(LogSource.source_id == s["source_id"]).first()
+            if not existing:
+                src = LogSource(
+                    source_id=s["source_id"],
+                    hostname=s["hostname"],
+                    vendor=s["vendor"],
+                    device_type=s["device_type"],
+                    enabled=s["enabled"],
+                )
+                db.add(src)
 
-    # Insert Raw Events
-    for r in dataset["raw_events"]:
-        existing_raw = db.query(RawEvent).filter(RawEvent.raw_event_id == r["raw_event_id"]).first()
-        if not existing_raw:
-            raw_obj = RawEvent(
-                raw_event_id=r["raw_event_id"],
-                source_id=r["source_id"],
-                raw_payload=r["raw_payload"],
-                payload_hash_sha256=r["payload_hash_sha256"],
-                payload_encoding=r["payload_encoding"],
-                received_at=r["received_at"],
-            )
-            db.add(raw_obj)
+        # Insert Raw Events
+        for r in dataset["raw_events"]:
+            existing_raw = db.query(RawEvent).filter(RawEvent.raw_event_id == r["raw_event_id"]).first()
+            if not existing_raw:
+                raw_obj = RawEvent(
+                    raw_event_id=r["raw_event_id"],
+                    source_id=r["source_id"],
+                    raw_payload=r["raw_payload"],
+                    payload_hash_sha256=r["payload_hash_sha256"],
+                    payload_encoding=r["payload_encoding"],
+                    received_at=r["received_at"],
+                )
+                db.add(raw_obj)
 
-    # Insert Normalized Events
-    for n in dataset["normalized_events"]:
-        existing_norm = db.query(NormalizedEvent).filter(NormalizedEvent.event_id == n["event_id"]).first()
-        if not existing_norm:
-            norm_obj = NormalizedEvent(
-                id=n["id"],
-                event_id=n["event_id"],
-                raw_event_id=n["raw_event_id"],
-                timestamp=n["timestamp"],
-                vendor=n["vendor"],
-                device_type=n["device_type"],
-                event_type=n["event_type"],
-                severity=n["severity"],
-                source_ip=n.get("source_ip"),
-                destination_ip=n.get("destination_ip"),
-                category=n.get("category"),
-                normalization_version="1.0",
-            )
-            db.add(norm_obj)
+        # Insert Normalized Events
+        for n in dataset["normalized_events"]:
+            existing_norm = db.query(NormalizedEvent).filter(NormalizedEvent.event_id == n["event_id"]).first()
+            if not existing_norm:
+                norm_obj = NormalizedEvent(
+                    id=n["id"],
+                    event_id=n["event_id"],
+                    raw_event_id=n["raw_event_id"],
+                    timestamp=n["timestamp"],
+                    vendor=n["vendor"],
+                    device_type=n["device_type"],
+                    event_type=n["event_type"],
+                    severity=n["severity"],
+                    source_ip=n.get("source_ip"),
+                    destination_ip=n.get("destination_ip"),
+                    category=n.get("category"),
+                    normalization_version="1.0",
+                )
+                db.add(norm_obj)
 
-    db.commit()
+        db.commit()
 
-    _demo_state_cache["loaded"] = True
-    _demo_state_cache["total_raw_events"] = dataset["total_raw_count"]
-    _demo_state_cache["total_normalized_events"] = dataset["total_normalized_count"]
-    _demo_state_cache["scenarios_loaded"] = list(dataset["scenarios"].keys())
+        _demo_state_cache["loaded"] = True
+        _demo_state_cache["total_raw_events"] = dataset["total_raw_count"]
+        _demo_state_cache["total_normalized_events"] = dataset["total_normalized_count"]
+        _demo_state_cache["scenarios_loaded"] = list(dataset["scenarios"].keys())
 
-    return {
-        "status": "SUCCESS",
-        "message": "Demo dataset loaded successfully across 5 CSE entities.",
-        "dataset_summary": {
-            "entities_count": len(dataset["entities"]),
-            "raw_events_count": dataset["total_raw_count"],
-            "normalized_events_count": dataset["total_normalized_count"],
-            "scenarios": dataset["scenarios"],
+        return {
+            "status": "SUCCESS",
+            "message": "Demo dataset loaded successfully across 5 CSE entities.",
+            "dataset_summary": {
+                "entities_count": len(dataset["entities"]),
+                "raw_events_count": dataset["total_raw_count"],
+                "normalized_events_count": dataset["total_normalized_count"],
+                "scenarios": dataset["scenarios"],
+            }
         }
-    }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error loading demo dataset: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error during demo load: {str(e)}"
+        )
 
 
 @router.post("/run")
@@ -181,42 +199,50 @@ def run_demo_pipeline(
     """
     Executes the 1-click end-to-end pipeline: normalization -> analytics -> supervisory assessment -> validation across all 5 CSE entities.
     """
-    if not _demo_state_cache["loaded"]:
-        load_demo_dataset(db, current_user)
+    try:
+        if not _demo_state_cache["loaded"]:
+            load_demo_dataset(db, current_user)
 
-    # Run assessment across all 5 CSE entities
-    entities = [
-        ("CSE-ALPHA-01", "Perimeter Command Gateway Alpha"),
-        ("CSE-BETA-02", "Regional Hub Beta"),
-        ("CSE-GAMMA-03", "Data Center Node Gamma"),
-        ("CSE-DELTA-04", "Edge Defense Station Delta"),
-        ("CSE-EPSILON-05", "Oversight Node Epsilon"),
-    ]
-    assessments = {}
-    primary_assessment = None
+        # Run assessment across all 5 CSE entities
+        entities = [
+            ("CSE-ALPHA-01", "Perimeter Command Gateway Alpha"),
+            ("CSE-BETA-02", "Regional Hub Beta"),
+            ("CSE-GAMMA-03", "Data Center Node Gamma"),
+            ("CSE-DELTA-04", "Edge Defense Station Delta"),
+            ("CSE-EPSILON-05", "Oversight Node Epsilon"),
+        ]
+        assessments = {}
+        primary_assessment = None
 
-    for eid, ename in entities:
-        ass = supervisory_service.run_entity_assessment(db, entity_id=eid, entity_name=ename)
-        assessments[eid] = ass
-        if eid == "CSE-ALPHA-01":
-            primary_assessment = ass
+        for eid, ename in entities:
+            ass = supervisory_service.run_entity_assessment(db, entity_id=eid, entity_name=ename)
+            assessments[eid] = ass
+            if eid == "CSE-ALPHA-01":
+                primary_assessment = ass
 
-    # Fetch all indicators and validate scenarios A-J
-    indicators = db.query(SupervisoryIndicator).all()
-    actual_ind_list = [
-        {"indicator": i.indicator_type, "indicator_type": i.indicator_type, "severity": i.severity, "entity_id": i.entity_id}
-        for i in indicators
-    ]
+        # Fetch all indicators and validate scenarios A-J
+        indicators = db.query(SupervisoryIndicator).all()
+        actual_ind_list = [
+            {"indicator": i.indicator_type, "indicator_type": i.indicator_type, "severity": i.severity, "entity_id": i.entity_id}
+            for i in indicators
+        ]
 
-    val_report = validation_engine.validate_scenarios(actual_ind_list)
+        val_report = validation_engine.validate_scenarios(actual_ind_list)
 
-    return {
-        "status": "SUCCESS",
-        "pipeline_stage": "COMPLETE",
-        "entity_assessment": primary_assessment,
-        "all_assessments": assessments,
-        "validation_report": val_report,
-    }
+        return {
+            "status": "SUCCESS",
+            "pipeline_stage": "COMPLETE",
+            "entity_assessment": primary_assessment,
+            "all_assessments": assessments,
+            "validation_report": val_report,
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error running demo pipeline: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error executing demonstration pipeline: {str(e)}"
+        )
 
 
 def compute_data_quality_intelligence(db: Session):

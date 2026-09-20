@@ -1262,33 +1262,55 @@ export async function fetchSupervisoryReportData(entityId: string = 'CSE-ALPHA-0
 // Phase 8 SIH Demonstration Mode API Services
 // ----------------------------------------------------------------------
 
+async function extractErrorMessage(response: Response, defaultMessage: string): Promise<string> {
+  try {
+    const data = await response.clone().json();
+    if (data?.detail) {
+      return `${defaultMessage}: ${data.detail}`;
+    }
+  } catch {
+    try {
+      const text = await response.clone().text();
+      if (text.includes('ECONNREFUSED') || text.includes('proxy error')) {
+        return `${defaultMessage}: Backend server is not running on http://localhost:8000. Please start backend via: python -m uvicorn app.main:app --app-dir backend --port 8000`;
+      }
+      if (text.length > 0 && text.length < 250) {
+        return `${defaultMessage}: ${text}`;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return `${defaultMessage} (${response.status})`;
+}
+
 export async function resetDemo(): Promise<any> {
   const response = await fetch('/api/v1/demo/reset', { method: 'POST' });
-  if (!response.ok) throw new Error(`Failed to reset demo: ${response.status}`);
+  if (!response.ok) throw new Error(await extractErrorMessage(response, 'Failed to reset demo'));
   return response.json();
 }
 
 export async function loadDemoData(): Promise<any> {
   const response = await fetch('/api/v1/demo/load', { method: 'POST' });
-  if (!response.ok) throw new Error(`Failed to load demo data: ${response.status}`);
+  if (!response.ok) throw new Error(await extractErrorMessage(response, 'Failed to load demo data'));
   return response.json();
 }
 
 export async function runDemoPipeline(): Promise<any> {
   const response = await fetch('/api/v1/demo/run', { method: 'POST' });
-  if (!response.ok) throw new Error(`Failed to run demo pipeline: ${response.status}`);
+  if (!response.ok) throw new Error(await extractErrorMessage(response, 'Failed to run demo pipeline'));
   return response.json();
 }
 
 export async function fetchDemoStatus(): Promise<any> {
   const response = await fetch('/api/v1/demo/status');
-  if (!response.ok) throw new Error(`Failed to fetch demo status: ${response.status}`);
+  if (!response.ok) throw new Error(await extractErrorMessage(response, 'Failed to fetch demo status'));
   return response.json();
 }
 
 export async function fetchDemoDataQuality(): Promise<any> {
   const response = await fetch('/api/v1/demo/data-quality');
-  if (!response.ok) throw new Error(`Failed to fetch demo data quality: ${response.status}`);
+  if (!response.ok) throw new Error(await extractErrorMessage(response, 'Failed to fetch demo data quality'));
   return response.json();
 }
 
