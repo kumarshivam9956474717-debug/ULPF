@@ -1,4 +1,4 @@
-# OmniLogix Judge Demo Runbook (2-Minute Walkthrough)
+# OmniLogix Demonstration Runbook (2-Minute Walkthrough)
 **Universal Log Pre-Processing Framework (ULPF)**  
 **SIH 2026 Problem Statement:** `SIH26156` (NTRO) — *Theme: Blockchain & Cybersecurity*  
 **Target Duration:** ~2 Minutes  
@@ -10,8 +10,8 @@
 
 ```bash
 # 1. Clone repository & configure environment
-git clone https://github.com/your-org/omnilogix.git
-cd omnilogix
+git clone https://github.com/kumarshivam9956474717-debug/ULPF.git
+cd ULPF
 cp .env.example .env
 
 # 2. Run master evaluation validation

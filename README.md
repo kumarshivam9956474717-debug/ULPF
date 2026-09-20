@@ -258,12 +258,14 @@ docker compose up -d
 ## 15. Complete Documentation Index
 
 - **Final Evaluation Report:** [`docs/FINAL_SIH_EVALUATION_REPORT.md`](file:///e:/SIH%202026/ULPF/docs/FINAL_SIH_EVALUATION_REPORT.md)
-- **Judge Demo Runbook:** [`docs/JUDGE_DEMO_RUNBOOK.md`](file:///e:/SIH%202026/ULPF/docs/JUDGE_DEMO_RUNBOOK.md)
+- **Demonstration Runbook:** [`docs/DEMO_RUNBOOK.md`](file:///e:/SIH%202026/ULPF/docs/DEMO_RUNBOOK.md)
+- **Architecture Specification (2-Page):** [`architecture/ARCHITECTURE_DOCUMENT.md`](file:///e:/SIH%202026/ULPF/architecture/ARCHITECTURE_DOCUMENT.md)
 - **Repository Readiness Audit:** [`docs/REPOSITORY_READINESS_AUDIT.md`](file:///e:/SIH%202026/ULPF/docs/REPOSITORY_READINESS_AUDIT.md)
 - **Requirement Traceability Matrix:** [`docs/FINAL_REQUIREMENT_TRACEABILITY.md`](file:///e:/SIH%202026/ULPF/docs/FINAL_REQUIREMENT_TRACEABILITY.md)
 - **Verified Capabilities Catalog:** [`docs/VERIFIED_CAPABILITIES.md`](file:///e:/SIH%202026/ULPF/docs/VERIFIED_CAPABILITIES.md)
 - **Known Operational Limitations:** [`docs/KNOWN_LIMITATIONS.md`](file:///e:/SIH%202026/ULPF/docs/KNOWN_LIMITATIONS.md)
 - **Production Deployment Hardening:** [`docs/PRODUCTION_DEPLOYMENT_HARDENING.md`](file:///e:/SIH%202026/ULPF/docs/PRODUCTION_DEPLOYMENT_HARDENING.md)
-- **Judge Defense Q&A:** [`docs/DEPLOYMENT_JUDGE_DEFENSE.md`](file:///e:/SIH%202026/ULPF/docs/DEPLOYMENT_JUDGE_DEFENSE.md)
+- **Technical Architecture FAQ:** [`docs/TECHNICAL_FAQ.md`](file:///e:/SIH%202026/ULPF/docs/TECHNICAL_FAQ.md)
 - **SIEM & Data Lake Integration:** [`docs/SIEM_DATA_LAKE_INTEGRATION.md`](file:///e:/SIH%202026/ULPF/docs/SIEM_DATA_LAKE_INTEGRATION.md)
 - **OmniLogix Event Contract (UES):** [`docs/OMNILOGIX_EVENT_CONTRACT.md`](file:///e:/SIH%202026/ULPF/docs/OMNILOGIX_EVENT_CONTRACT.md)
+
