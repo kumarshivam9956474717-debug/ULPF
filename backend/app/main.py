@@ -66,7 +66,7 @@ async def add_security_headers(request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:.*",
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.onrender\.com|http://localhost:.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -75,15 +75,44 @@ app.add_middleware(
 # Include v1 API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+# Static files & SPA routing for unified full-stack deployments (e.g. Render / Docker)
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
-@app.get("/")
-async def root_redirect():
-    return {
-        "framework": "Universal Log Pre-processing Framework (ULPF)",
-        "version": settings.VERSION,
-        "health_endpoint": f"{settings.API_V1_PREFIX}/health",
-        "air_gapped_mode": settings.AIR_GAPPED_MODE
-    }
+static_candidates = [
+    Path(__file__).resolve().parent.parent / "static",
+    Path(__file__).resolve().parents[2] / "frontend" / "dist",
+    Path.cwd() / "static",
+    Path.cwd() / "frontend" / "dist",
+]
+static_dir = None
+for cand in static_candidates:
+    if cand.exists() and (cand / "index.html").exists():
+        static_dir = cand
+        break
+
+if static_dir:
+    if (static_dir / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("openapi.json"):
+            return None
+        file_path = static_dir / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(static_dir / "index.html")
+else:
+    @app.get("/")
+    async def root_redirect():
+        return {
+            "framework": "Universal Log Pre-processing Framework (ULPF)",
+            "version": settings.VERSION,
+            "health_endpoint": f"{settings.API_V1_PREFIX}/health",
+            "air_gapped_mode": settings.AIR_GAPPED_MODE
+        }
 
 
 if __name__ == "__main__":

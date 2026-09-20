@@ -8,12 +8,48 @@ logger = logging.getLogger("ulpf.database")
 
 Base = declarative_base()
 
+def get_sqlite_url() -> str:
+    import os
+    import tempfile
+    from pathlib import Path
+
+    env_path = os.getenv("SQLITE_DB_PATH")
+    if env_path:
+        return f"sqlite:///{Path(env_path).resolve().as_posix()}"
+
+    candidates = [
+        Path.cwd() / "demo.db",
+        Path(__file__).resolve().parent.parent.parent / "demo.db",
+    ]
+    try:
+        candidates.append(Path(__file__).resolve().parents[3] / "demo.db")
+    except IndexError:
+        pass
+
+    for candidate in candidates:
+        try:
+            parent_dir = candidate.parent
+            if parent_dir.exists():
+                probe = parent_dir / ".db_write_probe"
+                probe.touch()
+                probe.unlink()
+                return f"sqlite:///{candidate.resolve().as_posix()}"
+        except Exception:
+            continue
+
+    temp_db = (Path(tempfile.gettempdir()) / "ulpf_demo.db").resolve()
+    return f"sqlite:///{temp_db.as_posix()}"
+
+
 def create_resilient_engine():
     url = settings.DATABASE_URL
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
     if url.startswith("sqlite"):
         return create_engine(
             url,
-            connect_args={"check_same_thread": False},
+            connect_args={"check_same_thread": False, "timeout": 60},
             pool_pre_ping=True,
             echo=settings.DEBUG,
         )
@@ -39,10 +75,7 @@ def create_resilient_engine():
         return eng
     except Exception as e:
         logger.warning(f"PostgreSQL connection unavailable ({e}). Falling back to local SQLite database.")
-        from pathlib import Path
-        repo_root = Path(__file__).resolve().parents[3]
-        db_path = (repo_root / "demo.db").resolve()
-        sqlite_url = f"sqlite:///{db_path.as_posix()}"
+        sqlite_url = get_sqlite_url()
         return create_engine(
             sqlite_url,
             connect_args={"check_same_thread": False, "timeout": 60},
