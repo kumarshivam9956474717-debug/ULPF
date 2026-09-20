@@ -15,16 +15,19 @@ class SourceResolver:
         # Mapping: ip_address -> (source_id, expiry_timestamp)
         self._cache: Dict[str, Tuple[Optional[str], float]] = {}
 
-    def resolve_source(self, remote_ip: str, db: Session) -> Optional[str]:
+    def resolve_source(self, remote_ip: str, db: Optional[Session] = None) -> Optional[str]:
         """
         Looks up the source_id for the given remote IP address.
-        Checks cache first; queries database if expired or not found.
+        Checks cache first; queries database if db is provided and cache is expired.
         """
         now = time.time()
         if remote_ip in self._cache:
             source_id, expiry = self._cache[remote_ip]
             if now < expiry:
                 return source_id
+
+        if db is None:
+            return None
 
         # Query LogSource table: check hostname matching remote_ip or source_id matching remote_ip
         try:

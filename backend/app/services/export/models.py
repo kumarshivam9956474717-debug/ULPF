@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class ExportRequest(BaseModel):
-    """Parameters for exporting normalized events to Apache Parquet."""
+    """Parameters for exporting normalized events to Apache Parquet or JSON."""
+    format: Optional[str] = Field("parquet", description="Export format: parquet, json, or ndjson")
     start_time: Optional[datetime] = Field(None, description="Optional start timestamp filter")
     end_time: Optional[datetime] = Field(None, description="Optional end timestamp filter")
     source_id: Optional[str] = Field(None, description="Optional log source ID filter")
@@ -12,7 +13,8 @@ class ExportRequest(BaseModel):
 
 
 class ExportMetrics(BaseModel):
-    """Detailed operational metrics from a Parquet export run."""
+    """Detailed operational metrics from an export run."""
+    export_format: str = "parquet"
     records_selected: int
     records_exported: int
     files_created: int

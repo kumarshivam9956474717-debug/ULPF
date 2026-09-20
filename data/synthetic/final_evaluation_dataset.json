@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "project": "OmniLogix Universal Log Pre-Processing Framework (ULPF)",
+    "problem_statement": "SIH26156 (NTRO)",
+    "theme": "Blockchain & Cybersecurity",
+    "dataset_type": "SYNTHETIC_OFFLINE_EVALUATION_DATASET",
+    "version": "1.0.0",
+    "created_at": "2026-09-20T00:00:00Z",
+    "classification": "UNCLASSIFIED_SYNTHETIC",
+    "air_gapped_ready": true,
+    "pii_present": false,
+    "total_records": 13
+  },
+  "scenarios": [
+    {
+      "scenario_id": "SCEN_01",
+      "scenario_name": "Successful Authentication",
+      "format": "RFC5424",
+      "vendor": "IdentityServer",
+      "category": "authentication",
+      "severity": "INFORMATIONAL",
+      "raw_payload": "<134>1 2026-09-20T03:16:01.512Z identity-srv-02 AUTH 2100 ID99 [authSDID@32473 user=\"analyst01\" method=\"MFA\"] Authentication successful for analyst01 from 10.0.1.42",
+      "expected_normalization": {
+        "event_type": "AUTHENTICATION_SUCCESS",
+        "user": "analyst01",
+        "source_ip": "10.0.1.42",
+        "action": "allow"
+      }
+    },
+    {
+      "scenario_id": "SCEN_02",
+      "scenario_name": "Failed Authentication (Brute Force Indicator)",
+      "format": "RFC3164",
+      "vendor": "LinuxSSH",
+      "category": "authentication",
+      "severity": "HIGH",
+      "raw_payload": "<13>Sep 20 03:12:05 core-switch-01 SSHT[12450]: Failed password for invalid user admin from 198.51.100.99 port 42150 ssh2",
+      "expected_normalization": {
+        "event_type": "AUTHENTICATION_FAILURE",
+        "user": "admin",
+        "source_ip": "198.51.100.99",
+        "action": "deny"
+      }
+    },
+    {
+      "scenario_id": "SCEN_03",
+      "scenario_name": "Firewall Deny",
+      "format": "CISCO_ASA",
+      "vendor": "Cisco",
+      "category": "firewall",
+      "severity": "MEDIUM",
+      "raw_payload": "<163>Sep 10 09:16:01 asa-edge-01 %ASA-3-106023: Deny tcp src outside:203.0.113.88/49152 dst inside:10.0.2.15/22 by access-group \"OUTSIDE-IN\" [0x0, 0x0]",
+      "expected_normalization": {
+        "event_type": "SESSION_DROP",
+        "source_ip": "203.0.113.88",
+        "destination_ip": "10.0.2.15",
+        "destination_port": 22,
+        "action": "deny"
+      }
+    },
+    {
+      "scenario_id": "SCEN_04",
+      "scenario_name": "Malware Alert (Cobalt Strike Beacon)",
+      "format": "JSON",
+      "vendor": "Suricata",
+      "category": "threat",
+      "severity": "CRITICAL",
+      "raw_payload": "{\"timestamp\":\"2026-09-10T09:16:01.654321+0000\",\"flow_id\":18446744073709551616,\"event_type\":\"alert\",\"src_ip\":\"203.0.113.111\",\"src_port\":44332,\"dest_ip\":\"10.0.1.15\",\"dest_port\":445,\"proto\":\"TCP\",\"alert\":{\"action\":\"blocked\",\"gid\":1,\"signature_id\":2013028,\"rev\":6,\"signature\":\"ET TROJAN Possible Cobalt Strike Beaconing Detected\",\"category\":\"A Network Trojan was Detected\",\"severity\":1}}",
+      "expected_normalization": {
+        "event_type": "THREAT_ALERT",
+        "source_ip": "203.0.113.111",
+        "destination_ip": "10.0.1.15",
+        "signature": "ET TROJAN Possible Cobalt Strike Beaconing Detected",
+        "action": "block"
+      }
+    },
+    {
+      "scenario_id": "SCEN_05",
+      "scenario_name": "Port Scan Activity",
+      "format": "CEF",
+      "vendor": "ArcSight/PaloAlto",
+      "category": "reconnaissance",
+      "severity": "HIGH",
+      "raw_payload": "CEF:0|Palo Alto Networks|PAN-OS|10.1.0|THREAT|scan|7|src=198.51.100.77 dst=10.0.1.25 spt=51234 dpt=80 proto=tcp act=alert msg=Port Scan Detected",
+      "expected_normalization": {
+        "event_type": "PORT_SCAN",
+        "source_ip": "198.51.100.77",
+        "destination_ip": "10.0.1.25",
+        "action": "alert"
+      }
+    },
+    {
+      "scenario_id": "SCEN_06",
+      "scenario_name": "Suspicious Outbound Connection (C2 / Tor)",
+      "format": "KEY_VALUE",
+      "vendor": "Check Point",
+      "category": "firewall",
+      "severity": "CRITICAL",
+      "raw_payload": "time=1725960060|action=reject|orig=192.168.1.1|i/f_dir=outbound|product=VPN-1 & FireWall-1|src=10.0.1.105|s_port=52341|dst=203.0.113.200|service=4444|proto=tcp|rule=45|rule_name=Block-Tor-C2|reason=Suspicious outbound connection to known C2 node",
+      "expected_normalization": {
+        "event_type": "SESSION_REJECT",
+        "source_ip": "10.0.1.105",
+        "destination_ip": "203.0.113.200",
+        "destination_port": 4444,
+        "action": "reject"
+      }
+    },
+    {
+      "scenario_id": "SCEN_07",
+      "scenario_name": "Configuration Change Event",
+      "format": "RFC3164",
+      "vendor": "CiscoIOS",
+      "category": "system",
+      "severity": "MEDIUM",
+      "raw_payload": "<38>Sep 20 03:15:22 edge-router-02 CONFIG_CHANGE[892]: User admin changed running configuration interface GigabitEthernet0/1 ip address 10.0.5.1 255.255.255.0",
+      "expected_normalization": {
+        "event_type": "CONFIG_UPDATE",
+        "user": "admin",
+        "action": "change"
+      }
+    },
+    {
+      "scenario_id": "SCEN_08",
+      "scenario_name": "Normal Web Traffic",
+      "format": "CSV",
+      "vendor": "WebProxy",
+      "category": "traffic",
+      "severity": "INFORMATIONAL",
+      "raw_payload": "2026-09-10T09:15:32Z,192.168.1.100,203.0.113.50,TCP,443,443,ALLOW,1542,8921,HTTP_PROXY",
+      "expected_normalization": {
+        "event_type": "SESSION_ALLOW",
+        "source_ip": "192.168.1.100",
+        "destination_ip": "203.0.113.50",
+        "action": "allow"
+      }
+    },
+    {
+      "scenario_id": "SCEN_09",
+      "scenario_name": "Unknown Vendor Event (No-Code Onboarding Test)",
+      "format": "CUSTOM_DELIMITED",
+      "vendor": "UnknownCustomGateway",
+      "category": "custom",
+      "severity": "LOW",
+      "raw_payload": "UNKGATEWAY::TIMESTAMP=2026-09-20T03:30:00Z::DEV=GW-CUSTOM-99::SRC=10.10.10.5::DST=10.20.20.5::STATUS=FILTERED::REASON=UNMATCHED_POLICY",
+      "expected_normalization": {
+        "event_type": "CUSTOM_UNKNOWN",
+        "source_ip": "10.10.10.5",
+        "destination_ip": "10.20.20.5",
+        "action": "filtered"
+      }
+    },
+    {
+      "scenario_id": "SCEN_10",
+      "scenario_name": "Palo Alto NGFW Threat Event",
+      "format": "PALO_ALTO",
+      "vendor": "Palo Alto",
+      "category": "threat",
+      "severity": "HIGH",
+      "raw_payload": "1,2026/09/10 09:16:01,001801000001,THREAT,vulnerability,1,2026/09/10 09:16:01,198.51.100.33,10.0.1.10,0.0.0.0,0.0.0.0,RULE-THREAT,domain\\user,,web-browsing,vsys1,outside,dmz,ethernet1/1,ethernet1/2,Forward-Log,2026/09/10 09:16:01,12345,1,49152,80,0,0,0x0,tcp,alert,\"SQL Injection Attempt(30001)\",any,informational,client-to-server,0,0x0,United States,10.0.0.0-10.255.255.255,0,,0,,,0,,,,,,,,0,0,0,0,0",
+      "expected_normalization": {
+        "event_type": "THREAT_VULNERABILITY",
+        "source_ip": "198.51.100.33",
+        "destination_ip": "10.0.1.10",
+        "action": "alert"
+      }
+    },
+    {
+      "scenario_id": "SCEN_11",
+      "scenario_name": "LEEF Security Event",
+      "format": "LEEF",
+      "vendor": "IBM QRadar/Edge",
+      "category": "security",
+      "severity": "HIGH",
+      "raw_payload": "LEEF:2.0|CustomSecurity|EdgeDefense|4.2|AUTH_FAIL|src=198.51.100.77\tdst=10.0.1.5\tsrcPort=54321\tdstPort=22\tproto=TCP\tusrName=root",
+      "expected_normalization": {
+        "event_type": "AUTH_FAIL",
+        "source_ip": "198.51.100.77",
+        "destination_ip": "10.0.1.5",
+        "destination_port": 22,
+        "user": "root"
+      }
+    },
+    {
+      "scenario_id": "SCEN_12",
+      "scenario_name": "Fortinet FortiGate Antivirus UTM Alert",
+      "format": "FORTINET",
+      "vendor": "Fortinet",
+      "category": "antivirus",
+      "severity": "CRITICAL",
+      "raw_payload": "date=2026-09-20 time=03:21:05 devname=FGT60D devid=FGT60D4614041234 logid=0000000020 type=utm subtype=virus level=warning vd=root srcip=192.168.1.88 srcport=49210 srcintf=\"internal\" dstip=203.0.113.88 dstport=80 dstintf=\"wan1\" action=blocked virus=\"EICAR_Test_File\" msg=\"File infected with EICAR test string was blocked.\"",
+      "expected_normalization": {
+        "event_type": "UTM_VIRUS",
+        "source_ip": "192.168.1.88",
+        "destination_ip": "203.0.113.88",
+        "action": "blocked"
+      }
+    },
+    {
+      "scenario_id": "SCEN_13",
+      "scenario_name": "XML Perimeter Security Event",
+      "format": "XML",
+      "vendor": "EnterpriseGateway",
+      "category": "security",
+      "severity": "MEDIUM",
+      "raw_payload": "<event><source>192.168.1.15</source><destination>10.0.1.20</destination><port>443</port><protocol>TCP</protocol><action>ALLOW</action><timestamp>2026-09-10T09:15:32Z</timestamp><device>edge-waf-01</device></event>",
+      "expected_normalization": {
+        "event_type": "WAF_ALLOW",
+        "source_ip": "192.168.1.15",
+        "destination_ip": "10.0.1.20",
+        "destination_port": 443,
+        "action": "ALLOW"
+      }
+    }
+  ]
+}

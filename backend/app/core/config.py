@@ -30,6 +30,19 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
 
+    # Authentication & RBAC Security Settings
+    JWT_SECRET_KEY: str = os.getenv(
+        "JWT_SECRET_KEY",
+        "omnilogix_ulpf_super_secure_jwt_secret_key_2026_sih_ntro_airgap_token_signing_key_32bytes"
+    )
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+
+    # Air-Gapped Administrator Bootstrap Settings
+    ADMIN_BOOTSTRAP_USERNAME: Optional[str] = os.getenv("ADMIN_BOOTSTRAP_USERNAME", None)
+    ADMIN_BOOTSTRAP_PASSWORD: Optional[str] = os.getenv("ADMIN_BOOTSTRAP_PASSWORD", None)
+    ADMIN_BOOTSTRAP_EMAIL: Optional[str] = os.getenv("ADMIN_BOOTSTRAP_EMAIL", "admin@omnilogix.local")
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
@@ -88,6 +101,19 @@ class Settings(BaseSettings):
     ULPF_ANOMALY_CONTAMINATION: float = float(os.getenv("ULPF_ANOMALY_CONTAMINATION", "0.01"))
     ULPF_ANOMALY_RANDOM_STATE: int = int(os.getenv("ULPF_ANOMALY_RANDOM_STATE", "42"))
     ULPF_ANOMALY_MIN_TRAIN_RECORDS: int = int(os.getenv("ULPF_ANOMALY_MIN_TRAIN_RECORDS", "20"))
+
+    # Step 4: High-Throughput Decoupled Persistence & Scalability Settings
+    PERSISTENCE_MODE: str = os.getenv("PERSISTENCE_MODE", "batch")  # "batch", "single", "parquet", "streaming"
+    PERSISTENCE_BATCH_SIZE: int = int(os.getenv("PERSISTENCE_BATCH_SIZE", "500"))
+    PERSISTENCE_FLUSH_INTERVAL_MS: int = int(os.getenv("PERSISTENCE_FLUSH_INTERVAL_MS", "100"))
+    PERSISTENCE_QUEUE_MAX_SIZE: int = int(os.getenv("PERSISTENCE_QUEUE_MAX_SIZE", "50000"))
+    PERSISTENCE_MAX_RETRIES: int = int(os.getenv("PERSISTENCE_MAX_RETRIES", "3"))
+
+    # Database Connection Pool Settings
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "20"))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "30"))
+    DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+    DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))
 
 
     if _has_pydantic_settings:

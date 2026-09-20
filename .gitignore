@@ -86,4 +86,8 @@ data/processed/*.json
 Thumbs.db
 .agents/
 .system_generated/
+benchmark_results.csv
+benchmark_results.json
+data/processed/**
+
 

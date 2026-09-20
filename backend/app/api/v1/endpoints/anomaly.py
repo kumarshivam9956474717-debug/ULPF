@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.anomaly.models import (
     TrainingResult,
     ScanResult,
@@ -13,7 +15,7 @@ from app.services.anomaly.models import (
 )
 from app.services.anomaly.service import anomaly_service
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))])
 
 
 class TrainRequest(BaseModel):
@@ -30,7 +32,8 @@ class ScanRequest(BaseModel):
 @router.post("/train", response_model=TrainingResult, summary="Train offline Isolation Forest anomaly baseline")
 def train_anomaly_model(
     req: TrainRequest = TrainRequest(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ):
     """
     Fits the offline unsupervised Isolation Forest baseline on normalized database events.
@@ -53,7 +56,8 @@ def train_anomaly_model(
 @router.post("/scan", response_model=ScanResult, summary="Scan normalized events for statistical anomalies")
 def scan_events_for_anomalies(
     req: ScanRequest = ScanRequest(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
 ):
     """
     Evaluates events with the anomaly baseline, computes normalized anomaly scores,

@@ -1,5 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Login } from './pages/Login';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Ingestion } from './pages/Ingestion';
@@ -17,26 +20,35 @@ import { SystemSettings } from './pages/Settings';
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="demo" element={<EvaluationWorkspace />} />
-          <Route path="supervisory" element={<SupervisoryAssessment />} />
-          <Route path="security-analytics" element={<SecurityAnalytics />} />
-          <Route path="ingestion" element={<Ingestion />} />
-          <Route path="onboarding" element={<Onboarding />} />
-          <Route path="profiles" element={<ParserProfiles />} />
-          <Route path="events" element={<Events />} />
-          <Route path="parsers" element={<Parsers />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="sources" element={<Sources />} />
-          <Route path="settings" element={<SystemSettings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="demo" element={<EvaluationWorkspace />} />
+            <Route path="supervisory" element={<SupervisoryAssessment />} />
+            <Route path="security-analytics" element={<SecurityAnalytics />} />
+            <Route path="ingestion" element={<Ingestion />} />
+            <Route path="onboarding" element={<Onboarding />} />
+            <Route path="profiles" element={<ParserProfiles />} />
+            <Route path="events" element={<Events />} />
+            <Route path="parsers" element={<Parsers />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="sources" element={<Sources />} />
+            <Route path="settings" element={<SystemSettings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 };
-
 
 export default App;

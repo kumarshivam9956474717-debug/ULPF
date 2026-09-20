@@ -1,6 +1,6 @@
 import React from 'react';
-import { Lock } from 'lucide-react';
-
+import { Lock, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   isBackendHealthy: boolean | null;
@@ -8,6 +8,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ isBackendHealthy, version = "1.0.0" }) => {
+  const { user, logout } = useAuth();
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div className="flex items-center space-x-3">
@@ -64,6 +66,37 @@ export const Header: React.FC<HeaderProps> = ({ isBackendHealthy, version = "1.0
               : 'Checking API...'}
           </span>
         </div>
+
+        {/* Authenticated User Profile & Role Badge */}
+        {user && (
+          <div className="flex items-center space-x-2 pl-3 border-l border-slate-200">
+            <div className="flex items-center space-x-2 py-1 px-2.5 rounded-lg bg-slate-50 border border-slate-200">
+              <UserIcon className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-xs font-semibold text-slate-800">{user.username}</span>
+              <span
+                className={`text-[10px] uppercase font-mono font-bold px-1.5 py-0.5 rounded border ${
+                  user.role === 'ADMIN'
+                    ? 'bg-purple-100 text-purple-800 border-purple-200'
+                    : user.role === 'ANALYST'
+                    ? 'bg-sky-100 text-sky-800 border-sky-200'
+                    : user.role === 'OPERATOR'
+                    ? 'bg-amber-100 text-amber-800 border-amber-200'
+                    : 'bg-slate-200 text-slate-700 border-slate-300'
+                }`}
+              >
+                {user.role}
+              </span>
+            </div>
+
+            <button
+              onClick={logout}
+              title="Sign Out of OmniLogix"
+              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-200 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

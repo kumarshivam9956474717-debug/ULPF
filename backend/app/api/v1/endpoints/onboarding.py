@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.onboarding.models import (
     LogAnalysisRequest,
     LogAnalysisResult,
@@ -25,7 +27,10 @@ router = APIRouter()
     summary="Analyze unknown raw log samples offline",
     description="Inspects sample log payloads, identifies structure/delimiter, infers data types, and recommends UES mappings with deterministic confidence scores."
 )
-def analyze_unknown_log(payload: LogAnalysisRequest) -> LogAnalysisResult:
+def analyze_unknown_log(
+    payload: LogAnalysisRequest,
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
+) -> LogAnalysisResult:
     try:
         return onboarding_service.analyze_logs(payload.sample_logs)
     except Exception as exc:
@@ -41,7 +46,10 @@ def analyze_unknown_log(payload: LogAnalysisRequest) -> LogAnalysisResult:
     summary="Validate proposed field mapping definition against samples",
     description="Simulates field extraction and UES normalization on sample logs without persisting data to database."
 )
-def validate_log_mapping(req: MappingValidationRequest) -> MappingValidationResult:
+def validate_log_mapping(
+    req: MappingValidationRequest,
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
+) -> MappingValidationResult:
     try:
         return onboarding_service.validate_mapping(req)
     except Exception as exc:
@@ -59,7 +67,8 @@ def validate_log_mapping(req: MappingValidationRequest) -> MappingValidationResu
 )
 def test_mapping_profile(
     req: TestProfileRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
 ) -> MappingValidationResult:
     try:
         return onboarding_service.test_profile(db=db, req=req)
@@ -78,7 +87,8 @@ def test_mapping_profile(
 )
 def create_mapping_profile(
     req: ProfileCreateRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ) -> ProfileResponse:
     try:
         profile = onboarding_service.create_profile(db=db, req=req)
@@ -119,7 +129,8 @@ def create_mapping_profile(
 def list_mapping_profiles(
     status: Optional[str] = Query(None, description="Filter by status (DRAFT, ACTIVE, DISABLED)"),
     vendor: Optional[str] = Query(None, description="Filter by vendor"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> List[ProfileResponse]:
     profiles = onboarding_service.list_profiles(db=db, status=status, vendor=vendor)
     return [
@@ -151,7 +162,8 @@ def list_mapping_profiles(
 )
 def get_mapping_profile(
     profile_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> ProfileResponse:
     profile = onboarding_service.get_profile(db=db, profile_id=profile_id)
     if not profile:
@@ -190,7 +202,8 @@ def get_mapping_profile(
 def update_mapping_profile(
     profile_id: str,
     req: ProfileUpdateRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ) -> ProfileResponse:
     try:
         profile = onboarding_service.update_profile(db=db, profile_id=profile_id, req=req)
@@ -231,7 +244,8 @@ def update_mapping_profile(
 def activate_mapping_profile(
     profile_id: str,
     actor: str = Query("user"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ) -> ProfileResponse:
     try:
         profile = onboarding_service.activate_profile(db=db, profile_id=profile_id, actor=actor)
@@ -272,7 +286,8 @@ def activate_mapping_profile(
 def disable_mapping_profile(
     profile_id: str,
     actor: str = Query("user"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ) -> ProfileResponse:
     try:
         profile = onboarding_service.disable_profile(db=db, profile_id=profile_id, actor=actor)
@@ -312,6 +327,7 @@ def disable_mapping_profile(
 )
 def get_profile_version_history(
     profile_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> List[AuditLogItem]:
     return onboarding_service.get_audit_logs(db=db, profile_id=profile_id)

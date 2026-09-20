@@ -1,3 +1,78 @@
+// ---------------------------------------------------------------------------
+// Air-Gapped Local Authentication & Authorization Interceptor
+// ---------------------------------------------------------------------------
+
+export function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem('omnilogix_token');
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthSession(token: string, user: UserProfile): void {
+  try {
+    localStorage.setItem('omnilogix_token', token);
+    localStorage.setItem('omnilogix_user', JSON.stringify(user));
+  } catch {
+    // ignore
+  }
+}
+
+export function clearAuthSession(): void {
+  try {
+    localStorage.removeItem('omnilogix_token');
+    localStorage.removeItem('omnilogix_user');
+  } catch {
+    // ignore
+  }
+}
+
+// Global fetch interceptor to automatically attach Bearer token and handle 401s
+if (typeof window !== 'undefined' && !(window as any).__omnilogix_fetch_intercepted) {
+  (window as any).__omnilogix_fetch_intercepted = true;
+  const originalFetch = window.fetch;
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const token = getAuthToken();
+    let newInit: RequestInit = init ? { ...init } : {};
+
+    if (token) {
+      const headers = new Headers(newInit.headers || {});
+      if (!headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      newInit.headers = headers;
+    }
+
+    const response = await originalFetch(input, newInit);
+    if (response.status === 401) {
+      const urlStr = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+      if (!urlStr.includes('/auth/login')) {
+        clearAuthSession();
+        window.dispatchEvent(new CustomEvent('omnilogix_auth_unauthorized'));
+      }
+    }
+    return response;
+  };
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  email?: string | null;
+  role: 'ADMIN' | 'ANALYST' | 'OPERATOR' | 'VIEWER';
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface AuthTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: UserProfile;
+}
+
 export interface HealthStatus {
   status: string;
   service: string;
@@ -1234,6 +1309,84 @@ export async function registerParser(payload: ParserCreatePayload): Promise<Pars
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: 'Failed to register parser' }));
     throw new Error(err.detail || `Registration failed with status: ${response.status}`);
+  }
+  return response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Authentication & User Management Endpoints
+// ---------------------------------------------------------------------------
+
+export async function loginApi(username: string, password: string): Promise<AuthTokenResponse> {
+  const response = await fetch('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Invalid credentials' }));
+    throw new Error(err.detail || 'Authentication failed. Please check your credentials.');
+  }
+  return response.json();
+}
+
+export async function fetchCurrentUser(): Promise<UserProfile> {
+  const response = await fetch('/api/v1/auth/me');
+  if (!response.ok) {
+    throw new Error(`Failed to fetch current user profile: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function fetchAllUsers(): Promise<UserProfile[]> {
+  const response = await fetch('/api/v1/auth/users');
+  if (!response.ok) {
+    throw new Error(`Failed to list users: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function createUserApi(payload: {
+  username: string;
+  password: string;
+  email?: string;
+  role: 'ADMIN' | 'ANALYST' | 'OPERATOR' | 'VIEWER';
+}): Promise<UserProfile> {
+  const response = await fetch('/api/v1/auth/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to create user' }));
+    throw new Error(err.detail || `User creation failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function updateUserRoleApi(
+  userId: string,
+  role: 'ADMIN' | 'ANALYST' | 'OPERATOR' | 'VIEWER'
+): Promise<UserProfile> {
+  const response = await fetch(`/api/v1/auth/users/${userId}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to update role' }));
+    throw new Error(err.detail || `Role update failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function deleteUserApi(userId: string): Promise<{ status: string; message: string }> {
+  const response = await fetch(`/api/v1/auth/users/${userId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Failed to delete user' }));
+    throw new Error(err.detail || `Delete failed: ${response.status}`);
   }
   return response.json();
 }

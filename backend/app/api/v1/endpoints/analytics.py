@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.export.models import ExportRequest, ExportMetrics, ExportStatus
 from app.services.export.export_service import export_service
 from app.services.analytics.models import (
@@ -23,7 +25,8 @@ router = APIRouter()
 @router.post("/export", response_model=ExportMetrics, summary="Export normalized events to Apache Parquet")
 def trigger_parquet_export(
     request: ExportRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ):
     """
     Exports normalized UES events from PostgreSQL into partitioned Apache Parquet files
@@ -32,6 +35,7 @@ def trigger_parquet_export(
     try:
         metrics = export_service.export_events(
             db=db,
+            format=request.format,
             start_time=request.start_time,
             end_time=request.end_time,
             source_id=request.source_id,
@@ -46,7 +50,9 @@ def trigger_parquet_export(
 
 
 @router.get("/export/status", response_model=ExportStatus, summary="Get latest Parquet export status and telemetry")
-def get_export_status():
+def get_export_status(
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
+):
     """Returns telemetry from the most recent Parquet export operation."""
     return export_service.get_status()
 
@@ -58,7 +64,8 @@ def _build_filter(
     end_time: Optional[datetime] = Query(None),
     vendor: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
-    device_type: Optional[str] = Query(None)
+    device_type: Optional[str] = Query(None),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> AnalyticsFilter:
     return AnalyticsFilter(
         start_time=start_time,

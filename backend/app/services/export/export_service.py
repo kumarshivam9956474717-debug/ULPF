@@ -1,8 +1,10 @@
+import json
 import os
 import time
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import settings
 from app.models.normalized_event import NormalizedEvent
@@ -14,7 +16,7 @@ from app.services.export.parquet_exporter import ParquetExporter
 class ExportService:
     """
     Coordinates chunked extraction of normalized events from the database
-    and export into partitioned Parquet files.
+    and export into partitioned Parquet or deterministic JSON/NDJSON datasets.
     """
 
     def __init__(self, export_dir: Optional[str] = None):
@@ -25,26 +27,28 @@ class ExportService:
     def export_events(
         self,
         db: Session,
+        format: str = "parquet",
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
         source_id: Optional[str] = None,
         batch_size: Optional[int] = None
     ) -> ExportMetrics:
         """
-        Extracts events in chunked batches and exports them to partitioned Parquet files.
+        Extracts events in chunked batches and exports them to Parquet or JSON.
         Never loads entire table into memory at once.
         """
         start_perf = time.perf_counter()
         self._is_exporting = True
         actual_batch_size = batch_size or settings.ULPF_EXPORT_BATCH_SIZE
-
-        os.makedirs(self.export_dir, exist_ok=True)
+        target_format = (format or "parquet").lower()
 
         try:
-            # Build base query
-            query = db.query(NormalizedEvent)
+            os.makedirs(self.export_dir, exist_ok=True)
 
-            # Apply timestamp filters (on event timestamp or ingestion timestamp)
+            # Build base query with joinedload to fetch raw_events for SHA-256 hash
+            query = db.query(NormalizedEvent).options(joinedload(NormalizedEvent.raw_event))
+
+            # Apply timestamp filters
             if start_time:
                 query = query.filter(NormalizedEvent.timestamp >= start_time)
             if end_time:
@@ -60,6 +64,7 @@ class ExportService:
 
             if total_selected == 0:
                 metrics = ExportMetrics(
+                    export_format=target_format,
                     records_selected=0,
                     records_exported=0,
                     files_created=0,
@@ -86,27 +91,44 @@ class ExportService:
 
                 dicts = [self._event_to_dict(e) for e in batch_records]
 
-                f_created, b_written, paths, p_count = ParquetExporter.write_partitioned_parquet(
-                    records=dicts,
-                    base_dir=self.export_dir
-                )
+                if target_format == "parquet":
+                    f_created, b_written, paths, p_count = ParquetExporter.write_partitioned_parquet(
+                        records=dicts,
+                        base_dir=self.export_dir
+                    )
+                    total_files += f_created
+                    total_bytes += b_written
+                    all_paths.extend(paths)
+                    for p in paths:
+                        partitions_set.add(os.path.dirname(p))
+                elif target_format in ("json", "ndjson"):
+                    f_created, b_written, paths = self._write_json_batch(
+                        records=dicts,
+                        base_dir=self.export_dir,
+                        is_ndjson=(target_format == "ndjson")
+                    )
+                    total_files += f_created
+                    total_bytes += b_written
+                    all_paths.extend(paths)
+                    for p in paths:
+                        partitions_set.add(os.path.dirname(p))
+                else:
+                    raise ValueError(f"Unsupported export format '{target_format}'. Supported: parquet, json, ndjson")
 
                 total_exported += len(dicts)
-                total_files += f_created
-                total_bytes += b_written
-                all_paths.extend(paths)
                 offset += actual_batch_size
 
             duration = round(time.perf_counter() - start_perf, 4)
 
             metrics = ExportMetrics(
+                export_format=target_format,
                 records_selected=total_selected,
                 records_exported=total_exported,
                 files_created=total_files,
                 bytes_written=total_bytes,
                 duration_seconds=duration,
                 failed_records=0,
-                partition_count=len(set([os.path.dirname(p) for p in all_paths])),
+                partition_count=len(partitions_set),
                 file_paths=all_paths
             )
             self.last_export = metrics
@@ -114,6 +136,39 @@ class ExportService:
 
         finally:
             self._is_exporting = False
+
+    def _write_json_batch(
+        self,
+        records: List[Dict[str, Any]],
+        base_dir: str,
+        is_ndjson: bool = False
+    ) -> tuple[int, int, List[str]]:
+        """Writes batch to deterministic UTF-8 JSON or NDJSON file."""
+        if not records:
+            return 0, 0, []
+
+        now_dt = datetime.now(timezone.utc)
+        part_dir = os.path.join(
+            base_dir,
+            f"year={now_dt.strftime('%Y')}",
+            f"month={now_dt.strftime('%m')}",
+            f"day={now_dt.strftime('%d')}"
+        )
+        os.makedirs(part_dir, exist_ok=True)
+
+        ext = "ndjson" if is_ndjson else "json"
+        filename = f"events-{uuid.uuid4().hex[:12]}.{ext}"
+        filepath = os.path.join(part_dir, filename)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            if is_ndjson:
+                for rec in records:
+                    f.write(json.dumps(rec, sort_keys=True) + "\n")
+            else:
+                json.dump(records, f, indent=2, sort_keys=True)
+
+        size = os.path.getsize(filepath)
+        return 1, size, [os.path.abspath(filepath)]
 
     def get_status(self) -> ExportStatus:
         """Returns the current status and latest export run metrics."""
@@ -125,7 +180,10 @@ class ExportService:
 
     @staticmethod
     def _event_to_dict(e: NormalizedEvent) -> Dict[str, Any]:
-        """Maps SQLAlchemy NormalizedEvent into serializable dict."""
+        """Maps SQLAlchemy NormalizedEvent into serializable dict with SHA-256 and raw payload."""
+        raw_hash = e.raw_event.payload_hash_sha256 if e.raw_event else None
+        raw_payload = e.raw_event.raw_payload if e.raw_event else None
+
         return {
             "event_id": e.event_id,
             "source_event_id": e.source_event_id,
@@ -167,6 +225,8 @@ class ExportService:
             "parser_id": e.parser_id,
             "parser_version": e.parser_version,
             "normalization_version": e.normalization_version,
+            "payload_hash_sha256": raw_hash,
+            "raw_payload": raw_payload,
         }
 
 

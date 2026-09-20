@@ -5,7 +5,7 @@ from app.services.syslog.manager import syslog_manager
 client = TestClient(app)
 
 
-def test_get_syslog_status():
+def test_get_syslog_status(client):
     response = client.get("/api/v1/syslog/status")
     assert response.status_code == 200
     data = response.json()
@@ -17,7 +17,7 @@ def test_get_syslog_status():
     assert "metrics" in data
 
 
-def test_syslog_metrics_reset():
+def test_syslog_metrics_reset(client):
     response = client.post("/api/v1/syslog/metrics/reset")
     assert response.status_code == 200
     data = response.json()

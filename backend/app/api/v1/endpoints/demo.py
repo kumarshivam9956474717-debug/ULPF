@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.demo_dataset import DemoDatasetGenerator
 from app.services.validation import ValidationEngine
 from app.services.supervisory import SupervisoryService
@@ -34,7 +36,10 @@ _demo_state_cache = {
 
 
 @router.post("/reset")
-def reset_demo_environment(db: Session = Depends(get_db)):
+def reset_demo_environment(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
+):
     """
     Safely resets synthetic demonstration records without destroying system configuration.
     """
@@ -63,7 +68,10 @@ def reset_demo_environment(db: Session = Depends(get_db)):
 
 
 @router.post("/load")
-def load_demo_dataset(db: Session = Depends(get_db)):
+def load_demo_dataset(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
+):
     """
     Generates and ingests synthetic demonstration data covering Scenarios A-J across 5 CSE entities.
     """
@@ -136,12 +144,15 @@ def load_demo_dataset(db: Session = Depends(get_db)):
 
 
 @router.post("/run")
-def run_demo_pipeline(db: Session = Depends(get_db)):
+def run_demo_pipeline(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles("ADMIN", "ANALYST"))
+):
     """
     Executes the 1-click end-to-end pipeline: normalization -> analytics -> supervisory assessment -> validation across all 5 CSE entities.
     """
     if not _demo_state_cache["loaded"]:
-        load_demo_dataset(db)
+        load_demo_dataset(db, current_user)
 
     # Run assessment across all 5 CSE entities
     entities = [
@@ -258,7 +269,10 @@ def compute_data_quality_intelligence(db: Session):
 
 
 @router.get("/data-quality")
-def get_demo_data_quality(db: Session = Depends(get_db)):
+def get_demo_data_quality(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
+):
     """
     Returns dynamic Data Quality Intelligence distinguishing NO EVIDENCE, EVIDENCE OF ABSENCE, and INSUFFICIENT DATA.
     """
@@ -266,7 +280,10 @@ def get_demo_data_quality(db: Session = Depends(get_db)):
 
 
 @router.get("/status")
-def get_demo_status(db: Session = Depends(get_db)):
+def get_demo_status(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
+):
     """
     Retrieves current status of the demonstration dataset and scenario validation.
     """

@@ -18,14 +18,16 @@ async def lifespan(app: FastAPI):
         except Exception:
             pass
 
-    # Application startup: ensure database tables exist and load active configurable log parsers from DB
+    # Application startup: ensure database tables exist, load active profiles, and bootstrap admin
     try:
         from app.core.database import init_db, SessionLocal
         init_db()
         from app.services.parsers.configurable import load_active_profiles_into_registry
+        from app.services.auth_bootstrap import init_admin_bootstrap
         db = SessionLocal()
         try:
             load_active_profiles_into_registry(db)
+            init_admin_bootstrap(db)
         finally:
             db.close()
     except Exception:
@@ -49,6 +51,16 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
 
 # Cross-Origin Resource Sharing (CORS)
 app.add_middleware(

@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.security_analytics.models import (
     SecurityOverview,
     SourceHealthMetrics,
@@ -13,7 +15,7 @@ from app.services.security_analytics.models import (
 )
 from app.services.security_analytics.service import security_analytics_service
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))])
 
 
 @router.get(
@@ -122,7 +124,10 @@ def get_correlation_candidates(
     summary="Trigger on-demand security analytics scan",
     description="Executes a full security analytics scan updating source health, baselines, coverage gaps, correlations, and supervisory findings."
 )
-def run_security_analysis(db: Session = Depends(get_db)) -> AnalyzeRunResponse:
+def run_security_analysis(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
+) -> AnalyzeRunResponse:
     try:
         return security_analytics_service.run_analysis_scan(db)
     except Exception as exc:
@@ -233,7 +238,8 @@ def get_finding_by_id(
 def review_finding(
     finding_id: str,
     actor: str = Query("analyst"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
 ) -> FindingResponse:
     try:
         return security_analytics_service.review_finding(db, finding_id, actor=actor)
@@ -257,7 +263,8 @@ def review_finding(
 def dismiss_finding(
     finding_id: str,
     actor: str = Query("analyst"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST"))
 ) -> FindingResponse:
     try:
         return security_analytics_service.dismiss_finding(db, finding_id, actor=actor)

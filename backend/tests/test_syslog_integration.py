@@ -83,6 +83,9 @@ async def test_syslog_end_to_end_pipeline_integration():
             assert syslog_metrics.messages_received >= 2
             assert syslog_metrics.messages_processed >= 2
 
+            # Give decoupled batch persistence worker a brief window to flush batch to DB
+            await asyncio.sleep(0.25)
+
 
 
             # 3. Verify Database Persistence & Traceability

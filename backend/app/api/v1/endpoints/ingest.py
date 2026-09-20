@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.ingestion.detector import detect_format
 from app.services.pipeline import PipelineService
 from app.schemas.ingest import (
@@ -21,7 +23,10 @@ router = APIRouter()
     summary="Detect raw log format offline",
     description="Analyzes a raw log string and returns detected format, confidence score, and heuristic explanation without persisting data."
 )
-def api_detect_format(payload: FormatDetectionRequest) -> FormatDetectionResponse:
+def api_detect_format(
+    payload: FormatDetectionRequest,
+    _: User = Depends(require_roles("ADMIN", "OPERATOR", "ANALYST"))
+) -> FormatDetectionResponse:
     res = detect_format(payload.raw_payload)
     return FormatDetectionResponse(
         detected_format=res.detected_format,
@@ -39,7 +44,8 @@ def api_detect_format(payload: FormatDetectionRequest) -> FormatDetectionRespons
 )
 def api_ingest_single(
     payload: SingleIngestRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "OPERATOR"))
 ) -> SingleIngestResponse:
     res = PipelineService.process_event(
         raw_payload=payload.raw_payload,
@@ -72,7 +78,8 @@ def api_ingest_single(
 )
 def api_ingest_batch(
     payload: BatchIngestRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "OPERATOR"))
 ) -> BatchIngestResponse:
     res = PipelineService.process_batch(
         events=payload.events,

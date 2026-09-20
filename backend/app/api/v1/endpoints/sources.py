@@ -2,6 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.models.log_source import LogSource
 from app.schemas.log_source import LogSourceCreate, LogSourceResponse
 
@@ -17,7 +19,8 @@ router = APIRouter()
 )
 def create_log_source(
     payload: LogSourceCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ) -> LogSource:
     existing = db.query(LogSource).filter(LogSource.source_id == payload.source_id).first()
     if existing:
@@ -49,6 +52,7 @@ def create_log_source(
     description="Returns all perimeter device sources currently registered."
 )
 def list_log_sources(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "OPERATOR", "ANALYST", "VIEWER"))
 ) -> List[LogSource]:
     return db.query(LogSource).order_by(LogSource.created_at.desc()).all()

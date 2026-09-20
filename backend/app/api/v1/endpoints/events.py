@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.models.normalized_event import NormalizedEvent
 from app.schemas.universal_event import UniversalEvent, RawEventTraceabilityResponse
 from app.services.integrity import verify_raw_event_record
@@ -22,7 +24,8 @@ def list_normalized_events(
     vendor: Optional[str] = None,
     severity: Optional[str] = None,
     action: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> List[UniversalEvent]:
     query = db.query(NormalizedEvent)
     if vendor:
@@ -92,7 +95,8 @@ def list_normalized_events(
 )
 def get_normalized_event(
     event_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> UniversalEvent:
     event = db.query(NormalizedEvent).filter(NormalizedEvent.event_id == event_id).first()
     if not event:
@@ -156,7 +160,8 @@ def get_normalized_event(
 )
 def get_original_raw_event(
     event_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))
 ) -> RawEventTraceabilityResponse:
     event = db.query(NormalizedEvent).filter(NormalizedEvent.event_id == event_id).first()
     if not event:

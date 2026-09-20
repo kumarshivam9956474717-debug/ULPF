@@ -8,7 +8,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-ulpf_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ulpf_dev_password}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      # Expose database exclusively to localhost to prevent public host network exposure
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -38,6 +39,15 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-ulpf_admin}:${POSTGRES_PASSWORD:-ulpf_dev_password}@ulpf-db:5432/${POSTGRES_DB:-ulpf_db}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://localhost}
       - AIR_GAPPED_MODE=True
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - ADMIN_BOOTSTRAP_USERNAME=${ADMIN_BOOTSTRAP_USERNAME:-}
+      - ADMIN_BOOTSTRAP_PASSWORD=${ADMIN_BOOTSTRAP_PASSWORD:-}
+      - PERSISTENCE_MODE=${PERSISTENCE_MODE:-batch}
+      - PERSISTENCE_BATCH_SIZE=${PERSISTENCE_BATCH_SIZE:-500}
+      - PERSISTENCE_FLUSH_INTERVAL_MS=${PERSISTENCE_FLUSH_INTERVAL_MS:-100}
+      - PERSISTENCE_QUEUE_MAX_SIZE=${PERSISTENCE_QUEUE_MAX_SIZE:-50000}
+      - DB_POOL_SIZE=${DB_POOL_SIZE:-20}
+      - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-30}
       - SYSLOG_ENABLED=${SYSLOG_ENABLED:-True}
       - SYSLOG_UDP_PORT=${SYSLOG_UDP_PORT:-1514}
       - SYSLOG_TCP_PORT=${SYSLOG_TCP_PORT:-1514}
@@ -72,6 +82,12 @@ services:
         condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     networks:
       - ulpf-network
 

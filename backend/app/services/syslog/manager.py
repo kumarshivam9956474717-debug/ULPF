@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from app.core.config import settings
+from app.services.persistence.queue import global_persistence_queue
 from app.services.syslog.metrics import syslog_metrics
 from app.services.syslog.udp_listener import UDPListener
 from app.services.syslog.tcp_listener import TCPListener
@@ -14,8 +15,8 @@ logger = logging.getLogger("ulpf.syslog.manager")
 
 class SyslogManager:
     """
-    Coordinates lifecycle of all Syslog transport listeners (UDP, TCP, TLS)
-    and the asynchronous worker pool.
+    Coordinates lifecycle of all Syslog transport listeners (UDP, TCP, TLS),
+    the asynchronous worker pool, and decoupled persistence.
     """
 
     def __init__(self):
@@ -52,13 +53,20 @@ class SyslogManager:
         workers_count = num_workers or settings.SYSLOG_WORKERS
 
         self.queue = asyncio.Queue(maxsize=q_size)
-        self.shutdown_event.clear()
+        self.shutdown_event = asyncio.Event()
         self.worker_tasks.clear()
+
+        # 0. Start decoupled persistence queue
+        if settings.PERSISTENCE_MODE != "single":
+            if hasattr(global_persistence_queue.backend, "session_factory"):
+                from app.services.syslog.worker import SessionLocal as WorkerSessionLocal
+                global_persistence_queue.backend.session_factory = WorkerSessionLocal
+            await global_persistence_queue.start()
 
         # 1. Start worker pool
         for wid in range(1, workers_count + 1):
             task = asyncio.create_task(
-                syslog_worker_task(wid, self.queue, self.shutdown_event)
+                syslog_worker_task(wid, self.queue, self.shutdown_event, global_persistence_queue)
             )
             self.worker_tasks.append(task)
         logger.info(f"Started {workers_count} Syslog processing workers.")
@@ -161,19 +169,25 @@ class SyslogManager:
             await asyncio.gather(*self.worker_tasks, return_exceptions=True)
             self.worker_tasks.clear()
 
+        # 4. Stop decoupled persistence queue if running
+        if settings.PERSISTENCE_MODE != "single" and global_persistence_queue.is_running:
+            await global_persistence_queue.stop(drain_timeout=drain_timeout)
+
         self.is_running = False
         logger.info("SyslogManager shutdown complete.")
 
     def get_status(self) -> Dict[str, Any]:
         """
-        Returns snapshot of listeners, worker pool, and runtime metrics.
+        Returns snapshot of listeners, worker pool, runtime metrics, and persistence status.
         """
         metrics_snap = syslog_metrics.snapshot()
         q_depth = self.queue.qsize() if self.queue else 0
         q_max = self.queue.maxsize if self.queue else settings.SYSLOG_QUEUE_MAXSIZE
+        persistence_snap = global_persistence_queue.get_metrics() if global_persistence_queue else {}
 
         return {
             "manager_running": self.is_running,
+            "persistence_mode": settings.PERSISTENCE_MODE,
             "udp": {
                 "enabled": settings.SYSLOG_UDP_ENABLED,
                 "running": self.udp_listener.is_running if self.udp_listener else False,
@@ -197,7 +211,8 @@ class SyslogManager:
                 "maxsize": q_max,
                 "workers": len(self.worker_tasks),
             },
-            "metrics": metrics_snap
+            "metrics": metrics_snap,
+            "persistence": persistence_snap
         }
 
 

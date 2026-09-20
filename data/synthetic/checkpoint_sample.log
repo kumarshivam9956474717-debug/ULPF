@@ -1,0 +1,5 @@
+# Check Point Security Gateway Log Sample (Synthetic Demonstration Data)
+# Scenario: Firewall Deny & Suspicious Outbound Connection
+time=1725960000|action=drop|orig=192.168.1.1|i/f_dir=inbound|i/f_name=eth0|has_accounting=0|product=VPN-1 & FireWall-1|__policy_id_tag=product=VPN-1 & FireWall-1;|src=198.51.100.45|s_port=49152|dst=10.0.1.50|service=22|proto=tcp|rule=12|rule_name=Block-Inbound-SSH|reason=Unauthorized SSH connection attempt
+time=1725960060|action=reject|orig=192.168.1.1|i/f_dir=outbound|i/f_name=eth1|has_accounting=0|product=VPN-1 & FireWall-1|__policy_id_tag=product=VPN-1 & FireWall-1;|src=10.0.1.105|s_port=52341|dst=203.0.113.200|service=4444|proto=tcp|rule=45|rule_name=Block-Tor-C2|reason=Suspicious outbound connection to known C2 node
+time=1725960120|action=accept|orig=192.168.1.1|i/f_dir=inbound|i/f_name=eth0|has_accounting=0|product=VPN-1 & FireWall-1|__policy_id_tag=product=VPN-1 & FireWall-1;|src=192.168.10.15|s_port=50123|dst=10.0.1.10|service=443|proto=tcp|rule=5|rule_name=Allow-HTTPS|reason=Normal web traffic

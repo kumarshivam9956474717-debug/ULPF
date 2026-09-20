@@ -18,22 +18,27 @@ def create_resilient_engine():
             echo=settings.DEBUG,
         )
     
-    # Try PostgreSQL first
+    # PostgreSQL with configurable production connection pooling
     try:
         eng = create_engine(
             url,
             connect_args={},
             pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20,
+            pool_size=settings.DB_POOL_SIZE,
+            max_overflow=settings.DB_MAX_OVERFLOW,
+            pool_timeout=settings.DB_POOL_TIMEOUT,
+            pool_recycle=settings.DB_POOL_RECYCLE,
             echo=settings.DEBUG,
         )
         # Verify connection
         with eng.connect() as conn:
             conn.execute(text("SELECT 1"))
+        logger.info(
+            f"PostgreSQL connection verified with pool_size={settings.DB_POOL_SIZE}, max_overflow={settings.DB_MAX_OVERFLOW}"
+        )
         return eng
     except Exception as e:
-        logger.warning(f"PostgreSQL connection unavailable ({e}). Falling back to local SQLite demo database.")
+        logger.warning(f"PostgreSQL connection unavailable ({e}). Falling back to local SQLite database.")
         sqlite_url = "sqlite:///./demo.db"
         return create_engine(
             sqlite_url,

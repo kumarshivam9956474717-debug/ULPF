@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.supervisory import SupervisoryService, EvidenceChainEngine
 from app.services.supervisory.models import (
     EntityAssessmentResponse,
@@ -16,7 +18,7 @@ from app.services.supervisory.models import (
 )
 from app.models.supervisory import SupervisoryIndicator, ReviewSample
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_roles("ADMIN", "ANALYST", "OPERATOR", "VIEWER"))])
 service = SupervisoryService()
 evidence_engine = EvidenceChainEngine()
 
@@ -58,6 +60,7 @@ def run_supervisory_analysis(
     entity_id: str = Query("CSE-ALPHA-01"),
     period: str = Query("Current Window"),
     db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST")),
 ):
     """Trigger on-demand multi-dimensional supervisory intelligence scan for an entity."""
     return service.run_entity_assessment(db, entity_id=entity_id, period=period)
@@ -171,6 +174,7 @@ def submit_human_review(
     finding_id: str,
     submission: ReviewSubmissionRequest,
     db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "ANALYST")),
 ):
     """Submit human examiner review status update and notes for a supervisory finding."""
     try:

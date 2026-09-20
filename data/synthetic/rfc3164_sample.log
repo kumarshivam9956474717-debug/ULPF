@@ -1,0 +1,4 @@
+<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8
+<13>Sep 20 03:12:05 core-switch-01 SSHT[12450]: Failed password for invalid user admin from 198.51.100.99 port 42150 ssh2
+<14>Sep 20 03:12:10 core-switch-01 SSHT[12450]: Accepted publickey for secops from 10.0.1.25 port 51234 ssh2: RSA SHA256:4aBcDeFgHiJkLmNoPqRsTuVwXyZ
+<38>Sep 20 03:15:22 edge-router-02 CONFIG_CHANGE[892]: User admin changed running configuration interface GigabitEthernet0/1 ip address 10.0.5.1 255.255.255.0

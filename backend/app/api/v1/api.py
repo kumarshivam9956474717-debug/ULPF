@@ -1,8 +1,24 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, sources, parsers, events, runs, ingest, syslog, analytics, anomaly, onboarding, security_analytics, supervisory, demo
+from app.api.v1.endpoints import (
+    health,
+    auth,
+    sources,
+    parsers,
+    events,
+    runs,
+    ingest,
+    syslog,
+    analytics,
+    anomaly,
+    onboarding,
+    security_analytics,
+    supervisory,
+    demo,
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["System Health"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication & Access Control"])
 api_router.include_router(demo.router, prefix="/demo", tags=["SIH Demonstration Mode"])
 api_router.include_router(ingest.router, tags=["Ingestion & Parsing"])
 api_router.include_router(onboarding.router, prefix="/onboarding", tags=["No-Code Log Onboarding"])

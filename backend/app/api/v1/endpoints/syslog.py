@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 from app.core.config import settings
+from app.core.auth import require_roles
+from app.models.user import User
 from app.services.syslog.manager import syslog_manager
 from app.services.syslog.metrics import syslog_metrics
 
@@ -8,7 +10,9 @@ router = APIRouter()
 
 
 @router.get("/status", response_model=Dict[str, Any], summary="Get live Syslog listener and queue status")
-async def get_syslog_status():
+async def get_syslog_status(
+    _: User = Depends(require_roles("ADMIN", "OPERATOR", "ANALYST", "VIEWER"))
+):
     """
     Returns operational status of the live Syslog transport listeners (UDP, TCP, TLS),
     queue depth, active connections, and throughput metrics.
@@ -17,7 +21,9 @@ async def get_syslog_status():
 
 
 @router.post("/start", response_model=Dict[str, Any], summary="Start Syslog listeners and worker pool")
-async def start_syslog_service():
+async def start_syslog_service(
+    _: User = Depends(require_roles("ADMIN", "OPERATOR"))
+):
     """
     Administratively start the Syslog listeners and worker pool if enabled in settings.
     """
@@ -35,7 +41,9 @@ async def start_syslog_service():
 
 
 @router.post("/stop", response_model=Dict[str, Any], summary="Stop Syslog listeners and worker pool")
-async def stop_syslog_service():
+async def stop_syslog_service(
+    _: User = Depends(require_roles("ADMIN", "OPERATOR"))
+):
     """
     Administratively perform graceful shutdown of Syslog listeners and worker pool.
     """
@@ -53,7 +61,9 @@ async def stop_syslog_service():
 
 
 @router.post("/metrics/reset", response_model=Dict[str, Any], summary="Reset Syslog telemetry metrics")
-async def reset_syslog_metrics():
+async def reset_syslog_metrics(
+    _: User = Depends(require_roles("ADMIN", "OPERATOR"))
+):
     """
     Resets the operational counters and throughput metrics (for benchmark/testing runs).
     """

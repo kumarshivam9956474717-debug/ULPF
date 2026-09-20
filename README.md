@@ -1,388 +1,269 @@
-# Universal Log Pre-processing Framework (ULPF)
+# OmniLogix: Universal Log Pre-Processing Framework (ULPF)
 
 **Smart India Hackathon 2026**  
-**Problem Statement:** `SIH26156`  
-**Organization:** NTRO  
+**Problem Statement:** `SIH26156` (National Technical Research Organisation — NTRO)  
 **Theme:** Blockchain & Cybersecurity  
 **Deployment Profile:** Strictly Air-Gapped / 100% Offline Capable  
+**Current Test Status:** **151/151 tests passing (100% green)**  
+**Evaluation Status:** 🟢 `VERIFIED` (Single-Node Containerized Stack) / `ARCHITECTURAL` (Distributed HA)
 
 ---
 
-## 1. Problem Statement & Background
+## 1. What is OmniLogix?
 
-Modern perimeter security infrastructure (NGFWs, edge routers, IDPS, VPN gateways, WAFs) produces massive volumes of security events in fragmented, proprietary, and unstructured formats:
-- Cisco Syslog (`%ASA-6-302013`, `%FTD-4-430002`)
-- Palo Alto CSV Syslog (`TRAFFIC`, `THREAT`)
-- Fortinet Key-Value (`type="traffic" subtype="forward"`)
-- ArcSight Common Event Format (CEF)
-- IBM Log Event Extended Format (LEEF)
-- Raw JSON & Safe XML payloads
-
-Existing SIEM and log aggregation pipelines suffer from vendor lock-in, high processing latency, loss of original raw payload context, and dependency on external cloud services.
-
-The **Universal Log Pre-processing Framework (ULPF)** is an open, vendor-agnostic, scalable, and air-gapped framework built to ingest, verify, normalize, and audit perimeter security logs with **100% lossless bi-directional traceability** and **cryptographic SHA-256 integrity verification**.
+**OmniLogix (ULPF)** is a vendor-agnostic, lossless, high-throughput perimeter log pre-processing and security telemetry framework. It ingests high-velocity raw security telemetry from firewalls, edge routers, WAFs, and IDPS devices, cryptographically preserves every raw log byte with invariant SHA-256 integrity, normalizes heterogeneous events into a canonical Universal Event Schema (UES), and exports standardized streams to downstream SIEMs (Splunk, Elastic, Sentinel) and columnar Data Lakes (Apache Parquet) in strict air-gapped defense enclaves.
 
 ---
 
-## 2. Proposed Solution
+## 2. Problem Statement Mapping (SIH26156 — NTRO)
 
-ULPF provides an end-to-end, decoupled log processing and supervisory intelligence framework:
-1. **Verbatim Raw Event Preservation:** Every log is ingested and stored immutably alongside its cryptographic SHA-256 hash before any transformation occurs.
-2. **Deterministic Format & Source Detection:** Automatically classifies incoming logs (RFC 5424, RFC 3164, CEF, LEEF, JSON, CSV, XML, Key-Value) with confidence scoring.
-3. **Modular Parser Plugins:** Vendor-specific parsers extract attributes into a normalized staging structure without altering core framework logic.
-4. **Universal Event Schema (UES):** Canonical, immutable schema organized into 11 logical groups covering identity, network, device, taxonomy, threat, and traceability.
-5. **No-Code Log Onboarding Engine:** Semi-automated structural analysis and type inference for unknown perimeter log formats with human-in-the-loop preview.
-6. **Air-Gapped Anomaly & Threat Detection:** Statistical modeling and unsupervised machine learning (`IsolationForest`) executing 100% locally without cloud telemetry.
-7. **Multi-CSE Supervisory Intelligence:** Multi-entity governance across Critical Sector Entities (CSEs) tracking 8 capability dimensions, peer benchmarking, and forensic evidence chains.
+Modern perimeter defense systems generate terabytes of fragmented, proprietary, and unstructured event streams daily. Existing SIEM ingestion pipelines suffer from:
+1. **Severe Vendor Lock-in & Ingestion Tax:** SIEMs charge by ingested data volume while spending expensive CPU cycles parsing raw strings.
+2. **Loss of Forensic Ground Truth:** Aggressive extraction often discards original unparsed payload context, compromising legal and investigative chains of custody.
+3. **Cloud & External Telemetry Vulnerabilities:** Traditional tools rely on external CDNs, cloud licensing servers, or public fonts unsuited for air-gapped defense networks.
+
+OmniLogix directly addresses these challenges through a standalone, air-gapped containerized processing pipeline that guarantees 100% lossless forensic traceability.
 
 ---
 
-## 3. Key Features
+## 3. Key Capabilities Matrix
 
-- **100% Lossless Raw Preservation:** Original payloads are preserved bit-for-bit in `raw_events`.
-- **Bi-Directional Traceability:** Every `NormalizedEvent` maintains a non-nullable foreign key pointer (`raw_event_id`) to its originating raw record.
-- **Cryptographic Integrity:** Automatic SHA-256 recalculation on query (`GET /api/v1/events/{id}/raw`) verifies that zero tampering occurred.
-- **Strict Air-Gapped Operation:** Zero external API calls, cloud telemetry, or SaaS dependencies.
-- **High-Throughput Syslog Transport:** Asynchronous UDP, TCP (newline and octet-counted framing), and TLS 1.2+ listeners with bounded queue backpressure guards.
-- **Interactive SIH Demonstration Workspace:** 1-Click guided 9-step evaluation pipeline with automated scenario validation (Scenarios A through J).
-- **Epistemic Data Quality Auditing:** Rigorous distinction between *No Evidence*, *Evidence of Absence*, and *Insufficient Data*.
+| Capability | Evaluation Status | Implementation & Evidence |
+|---|---|---|
+| **Multi-Vendor Ingestion** | `VERIFIED` | 13+ formats parsed natively (Cisco, Fortinet, Palo Alto, Check Point, Suricata, Syslog, CEF, LEEF, JSON, CSV, XML). |
+| **Lossless Raw Preservation** | `VERIFIED` | Immutable raw byte storage in PostgreSQL `raw_events` and Parquet export columns. |
+| **Cryptographic SHA-256 Integrity** | `VERIFIED` | Ingest-time hashing; payload alteration detected immediately via `verify_sha256()`. |
+| **Bi-Directional Traceability** | `VERIFIED` | Normalized events maintain non-nullable `raw_event_id` foreign key linkage to raw records. |
+| **Universal Event Schema (UES)** | `VERIFIED` | Canonical 11-group schema (Identity, Network, Host, Device, Threat, Custom, Timing). |
+| **No-Code Log Onboarding** | `VERIFIED` | Interactive Structure Analyzer + regex generator for unknown perimeter streams without code changes. |
+| **Decoupled Batch Persistence** | `VERIFIED` | In-memory asynchronous queue reducing write latency from 7.78ms to 0.10ms (98.7% reduction). |
+| **Data Lake & SIEM Exporter** | `VERIFIED` | Snappy-compressed columnar Parquet, NDJSON, and JSON exports with Splunk CIM, Elastic ECS, and Sentinel ASIM mappings. |
+| **Supervisory Intelligence & Anomaly Engine**| `VERIFIED` | 8 capability dimensions, peer benchmarking, and offline Scikit-Learn `IsolationForest` scoring. |
+| **Cryptographic RBAC** | `VERIFIED` | Salted Bcrypt (12 rounds), HMAC-SHA256 JWT tokens, and 4 roles (`ADMIN`, `ANALYST`, `OPERATOR`, `VIEWER`). |
+| **Strict Air-Gapped Operation** | `VERIFIED` | Zero CDNs, bundled `.woff2` fonts, socket outbound egress guard (`AIR_GAPPED_MODE=True`). |
+| **Containerized Deployment** | `VERIFIED` | 3-tier Docker Compose with non-root security (`omnilogix`, UID 10001) and loopback DB binding. |
+| **Multi-Broker Streaming (Kafka)** | `ARCHITECTURAL` | `StreamingSink` interface implemented; distributed cluster topology documented in `SCALABLE_DEPLOYMENT_ARCHITECTURE.md`. |
+| **Multi-Node Database HA** | `ARCHITECTURAL` | Patroni / pgpool-II primary-replica clustering architecture specified in `SCALABLE_DEPLOYMENT_ARCHITECTURE.md`. |
 
 ---
 
-## 4. System Architecture & Processing Pipeline
+## 4. Architecture Reference
 
-```text
-Raw Event (Syslog / UDP / TCP / File / API)
-         │
-         ▼
-Ingestion Stage (Verbatim raw capture + SHA-256 hash generation)
-         │
-         ▼
-Format & Vendor Detection (RFC 5424/3164, CEF, LEEF, JSON, CSV, XML, Key-Value)
-         │
-         ▼
-Modular Parser Plugins (Cisco, Fortinet, Palo Alto, Generic)
-         │
-         ▼
-Universal Event Schema (UES) Normalization (11 logical telemetry groups)
-         │
-         ▼
-Validation & Quality Audit (Schema conformance + foreign-key linkage)
-         │
-         ▼
-Analytics & Supervisory Intelligence (Isolation Forest + 8 Capability Dimensions)
-         │
-         ▼
-Export & Forensic Auditing (Partitioned Apache Parquet + JSON/CSV Reports)
+```
+                 PERIMETER NETWORK TELEMETRY
+         (Firewalls, Edge Routers, WAFs, IDPS, Gateways)
+                              │
+             UDP / TCP / TLS (Ports 1514 / 16514)
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                       OmniLogix Stack                        │
+│                                                              │
+│  [1. Ingestion] Verbatim Raw Capture + Invariant SHA-256     │
+│         │                                                    │
+│  [2. Detection] Deterministic Format & Vendor Identification │
+│         │                                                    │
+│  [3. Normalization] Universal Event Schema (11 Groups)       │
+│         │                                                    │
+│  [4. Decoupled Buffer] High-Speed In-Memory Worker Queue     │
+│         │                                                    │
+│         ├────────────────────────┬─────────────────────────┐ │
+│         ▼                        ▼                         ▼ │
+│  [PostgreSQL 16]         [Parquet Lake]          [Streaming] │
+│  (Relational Storage)   (Columnar Snappy)       (SIEM Sinks) │
+│         ▲                                                    │
+│         │                                                    │
+│  [Frontend UI (NGINX / React 18 SPA)] ◄── Evaluator Browser  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 5. Supported Log Formats & Vendor Examples
+## 5. Supported Formats & Systems
 
-| Format | Vendors / Standards | Example Pattern |
-|---|---|---|
-| **Syslog (RFC 3164 / BSD)** | Legacy Routers & Firewalls | `<134>Sep 12 11:30:00 asa-01 %ASA-6-302013: ...` |
-| **Syslog (RFC 5424)** | Modern Perimeter Systems | `<165>1 2026-09-12T11:30:00Z fw01 ASA 1234 ID47 ...` |
-| **Key-Value Syslog** | Fortinet FortiOS / UTM | `date=2026-09-12 time=11:30:00 devname="FGT" srcip=10.0.1.50` |
-| **CSV Syslog** | Palo Alto PAN-OS | `1,2026/09/12 11:30:00,001201000,TRAFFIC,drop,...` |
-| **CEF (Common Event Format)** | ArcSight, Check Point, FTD | `CEF:0|Cisco|ASA|9.1|106023|Deny traffic|6|src=...` |
-| **LEEF** | IBM QRadar / Edge Appliances | `LEEF:2.0|Vendor|Product|Version|EventID|src=...` |
-| **Raw JSON** | Cloudflare Edge, WAFs, Proxies | `{"timestamp": "...", "client_ip": "...", "action": "block"}` |
-| **Safe XML** | Perimeter Devices (XXE Protected)| `<event><source_ip>192.168.1.1</source_ip></event>` |
+1. **Cisco ASA NGFW:** `%ASA-3-106023`, `%ASA-6-302013` session built/teardown.
+2. **Fortinet FortiGate:** Delimited key-value traffic, system, and UTM antivirus logs.
+3. **Palo Alto PAN-OS:** Standard CSV traffic and threat vulnerability records.
+4. **Check Point FireWall-1:** Key-value/pipe firewall drop and C2 beacon reject events.
+5. **Suricata IDS/IPS:** JSON EVE network flow, port scan, and malware alerts.
+6. **RFC 3164 Syslog:** BSD legacy system, auth, and router configuration logs.
+7. **RFC 5424 Syslog:** Structured enterprise syslog with structured data elements.
+8. **ArcSight CEF:** Common Event Format threat and brute-force records.
+9. **IBM QRadar LEEF:** Log Event Extended Format perimeter authentication events.
+10. **Structured JSON:** Machine-readable cloud, auth, and host security telemetry.
+11. **Delimited CSV / TSV:** NetFlow and proxy access connection logs.
+12. **XXE-Hardened XML:** Web Application Firewall (WAF) event streams.
+13. **Unknown / Proprietary Formats:** Dynamic no-code tokenized log onboarding.
 
 ---
 
 ## 6. Technology Stack
 
-### Backend & Core Pipeline
-- **Python 3.12+**
-- **FastAPI:** Async REST API framework with automated OpenAPI/Swagger documentation.
-- **Pydantic v2:** High-speed schema validation and immutable UES models.
-- **SQLAlchemy 2.0:** Relational ORM supporting PostgreSQL 16 and SQLite fallback.
-- **Alembic:** Database migration orchestration.
-- **Scikit-learn, NumPy, Pandas:** Offline statistical modeling, feature matrices, and anomaly detection.
-- **Pytest & HTTPX:** Automated test suite covering unit, integration, and security tests.
-
-### Frontend Shell
-- **React 18 & TypeScript:** Strict type-safe UI architecture.
-- **Vite:** Build tooling and local development server.
-- **Tailwind CSS:** Cybersecurity dark/light theme.
-- **React Router v6:** Client-side routing.
-- **Lucide React:** Infrastructure and security iconography.
-
-### Infrastructure & Deployment
-- **Docker & Docker Compose:** Multi-service container orchestration.
+- **Backend Core:** Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2, Uvicorn.
+- **Data & Persistence:** PostgreSQL 16 (production), SQLite 3 (resilient zero-dependency fallback).
+- **Analytics & ML:** Scikit-learn (Isolation Forest), NumPy, PyArrow (Apache Parquet Snappy).
+- **Security & Cryptography:** Passlib (Bcrypt 12 rounds), Python-Jose (HMAC-SHA256 JWT), DefusedXML.
+- **Frontend SPA:** React 18, TypeScript, Tailwind CSS, Vite 5, Lucide Icons, bundled fonts.
+- **Orchestration:** Docker Compose v2, NGINX Alpine, Python Slim base images.
 
 ---
 
-## 7. Universal Event Schema (UES) Groups
+## 7. Quick Start (Evaluator Setup)
 
-The Universal Event Schema standardizes perimeter telemetry into 11 canonical groups:
-1. **Identity:** `event_id` (UUID), `source_event_id`, `schema_version`
-2. **Time:** `timestamp`, `ingestion_timestamp` (UTC), `timezone`
-3. **Source Device:** `vendor`, `product`, `device_type`, `device_id`, `hostname`, `source_format`
-4. **Network:** `source_ip`, `source_port`, `destination_ip`, `destination_port`, `protocol`
-5. **User Identity:** `username`, `user_id`, `authentication_method`
-6. **Event Taxonomy:** `event_type`, `action` (allow/block/drop/alert/reset), `outcome`, `severity`, `category`
-7. **Network Context:** `interface`, `direction` (inbound/outbound/internal), `zone`
-8. **Threat & Security:** `threat_name`, `threat_id`, `signature_id`, `rule_id`
-9. **Additional / Extensibility:** `message`, `tags`, `custom_fields` (extensible dictionary)
-10. **Traceability:** `raw_event_id` (FK), `parser_id`, `parser_version`, `normalization_version`
-11. **Raw Preservation:** `raw_event` (verbatim log payload)
-
----
-
-## 8. Project Structure
-
-```text
-ULPF/
-├── backend/                      # FastAPI + SQLAlchemy + Pydantic backend
-│   ├── alembic/                  # Database migration versions
-│   ├── app/
-│   │   ├── api/v1/               # REST API endpoints (health, ingest, syslog, demo, etc.)
-│   │   ├── core/                 # Configuration & resilient database engine
-│   │   ├── models/               # SQLAlchemy ORM models (raw_events, normalized_events, etc.)
-│   │   ├── schemas/              # Pydantic validation schemas
-│   │   ├── services/             # Modular parsers, UES normalizer, anomaly engine
-│   │   ├── utils/                # Benchmarking utilities
-│   │   └── main.py               # Application entry point
-│   ├── tests/                    # Pytest automated test suite (102 tests)
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/                     # React + TypeScript + Vite + Tailwind frontend
-│   ├── src/
-│   │   ├── components/           # Sidebar, Header, SystemStatusCard, Layout
-│   │   ├── pages/                # EvaluationWorkspace, Dashboard, Ingestion, Events, etc.
-│   │   ├── services/             # Type-safe API client
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── Dockerfile
-├── data/
-│   ├── raw/                      # Ingested raw log staging
-│   ├── processed/                # Normalized Parquet / JSON exports
-│   └── synthetic/                # Synthetic benchmark datasets (Cisco, Fortinet, PA, CEF, etc.)
-├── database/                     # Schema reference documentation
-├── docs/                         # Architecture, verification reports, and air-gap audits
-├── tools/
-│   ├── run_evaluation.py         # One-command reproducible SIH evaluation runner
-│   └── syslog_sender.py          # Synthetic syslog network emitter
-├── docker-compose.yml            # Multi-service composition (Postgres, Backend, Frontend)
-├── .env.example                  # Safe configuration template (zero credentials)
-├── .gitignore                    # Complete exclusions for caches, databases, node_modules
-├── LICENSE                       # MIT Open Source License
-└── README.md
-```
-
----
-
-## 9. Deployment & Website Access
-
-### Local Access (Development & Local Evaluation)
-- **Frontend Application:** `http://localhost:5173`
-- **SIH Demonstration Workspace:** `http://localhost:5173/demo`
-- **Backend API & Swagger Documentation:** `http://127.0.0.1:8000/docs`
-- **Health Check Endpoint:** `http://127.0.0.1:8000/api/v1/health`
-
-### Public Deployment Status
-- **Public Deployment:** Not Deployed (Framework designed for air-gapped on-premises enclaves)
-- **Live Evaluation URL:** `To be deployed`
-
----
-
-## 10. Quick Evaluation Guide (For SIH Judges)
-
-To evaluate the complete framework locally in under 3 minutes:
-
-### Step 1: Clone Repository
+### Option A: Docker Compose (Recommended)
 ```bash
-git clone <repository_url>
-cd ULPF
-```
+# 1. Clone repository
+git clone https://github.com/your-org/omnilogix.git
+cd omnilogix
 
-### Step 2: One-Command Reproducible Evaluation
-Execute the self-contained verification runner:
-```bash
-python tools/run_evaluation.py
-```
-This automatically resets the isolated evaluation environment, generates synthetic telemetry across 5 CSE entities, executes UES normalization, evaluates Scenarios A through J, and prints the validation summary.
+# 2. Configure environment from template
+cp .env.example .env
 
-### Step 3: Start Services Locally
-**Terminal 1 — Backend:**
+# 3. Start stack in background
+docker compose up -d
+
+# 4. Run master evaluation validator
+python tools/final_evaluation.py
+```
+- **Web UI:** `http://localhost:5173`
+- **Interactive API Documentation (Swagger):** `http://localhost:8000/docs`
+
+### Option B: Local Standalone Development (Zero Docker)
+If Docker is not running on the evaluator workstation, OmniLogix automatically falls back to its internal resilient SQLite engine:
 ```bash
+# 1. Install dependencies
+pip install -r backend/requirements.txt
+cd frontend && npm install && cd ..
+
+# 2. Launch backend API server
 cd backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
-**Terminal 2 — Frontend:**
-```bash
+# 3. In another terminal, launch frontend
 cd frontend
-npm install
 npm run dev
 ```
 
-### Step 4: Explore the User Interface
+---
+
+## 8. Admin Bootstrap Instructions
+
+To bootstrap administrative access interactively:
+```bash
+python tools/create_admin.py
+```
+*Prompts for username, password, and creates an `ADMIN` role record in the database with salted Bcrypt hashing.*
+
+Alternatively, configure pre-provisioned bootstrap credentials in `.env`:
+```env
+ADMIN_BOOTSTRAP_USERNAME=sih_admin
+ADMIN_BOOTSTRAP_PASSWORD=SuperSecretPassword2026!
+```
+
+---
+
+## 9. Verification & Test Commands
+
+### 1. Master Evidence Validator (All 14 Subsystems)
+```bash
+python tools/final_evaluation.py
+```
+*Exits with code `0` when all mandatory checks pass.*
+
+### 2. Full Backend Pytest Regression Suite
+```bash
+python -m pytest backend/tests -q
+```
+*Expected:* **151 passed, 0 failed, 1 warning (100% green)**.
+
+### 3. Scenario Validation Runner (Scenarios A through J)
+```bash
+python tools/run_evaluation.py
+```
+*Expected:* **10 / 10 Scenarios Passed (100% Precision, 100% Recall, 100% F1-score)**.
+
+### 4. Frontend Production Build
+```bash
+cd frontend && npm run build
+```
+*Expected:* 0 TypeScript errors, 0 bundler warnings, clean static output in `frontend/dist/`.
+
+---
+
+## 10. 2-Minute Judge Demo Workflow
+
 1. Open `http://localhost:5173/demo` in your browser.
-2. Click **Start Demonstration** to run the 9-step guided evaluation workflow.
-3. Review **Demonstration Results — SIH Scenarios Validation (Scenarios A through J)**.
-4. Explore **Events Explorer** (`/events`) to inspect 11-group UES normalization and click **Inspect** to audit the cryptographic SHA-256 raw log verification.
-5. Explore **Security Analytics** (`/security-analytics`) and **Supervisory Assessment** (`/supervisory`) for multi-entity governance.
+2. Click **Start Guided Demonstration**:
+   - **Step 1:** Ingests 250+ multi-CSE logs across 5 Critical Sector Entities.
+   - **Step 2:** Normalizes events into the 11-group UES and computes invariant SHA-256 hashes.
+   - **Step 3:** Runs unsupervised Isolation Forest anomaly detection.
+   - **Step 4:** Executes 8-dimension supervisory intelligence scan across 5 entities.
+   - **Step 5-6:** Audits operational execution gaps and supervisory findings.
+   - **Step 7:** Traces bi-directional evidence chain: Normalized Event $\leftrightarrow$ `raw_event_id` $\leftrightarrow$ SHA-256 Hash.
+   - **Step 8:** Evaluator submits audit review decision.
+   - **Step 9:** Exports downloadable evaluation report (JSON / CSV).
+3. Visit `http://localhost:5173/onboarding` to demonstrate **No-Code Onboarding** of unknown proprietary logs without code modification.
+4. Visit `http://localhost:5173/events` and click **Inspect** to verify cryptographic SHA-256 raw event anti-tamper.
 
 ---
 
-## 11. Running Automated Tests
+## 11. Network Port Map
 
-Run the complete backend test suite:
-```bash
-cd backend
-python -m pytest tests/ -v
-```
-**Test Results:** **102 passed, 0 failed** across all modules:
-- System Health & Readiness (`test_health.py`)
-- Universal Event Schema (`test_schema.py`)
-- Format Detection (`test_detection.py`)
-- Modular Parsers & Normalization (`test_parsers.py`, `test_normalization.py`)
-- Persistence, Traceability & SHA-256 (`test_persistence.py`, `test_pipeline.py`)
-- REST APIs (`test_api_endpoints.py`, `test_ingest_api.py`)
-- Syslog UDP / TCP / TLS (`test_syslog_*.py`)
-- Anomaly Detection & Supervisory Intelligence (`test_anomaly.py`, `test_supervisory_intelligence.py`)
-- Scenario Validation Engine (`test_phase8_demo_validation.py`)
-
-Run the frontend typecheck and production build:
-```bash
-cd frontend
-npm run build
-```
-**Build Result:** `0 errors, 0 warnings` (production bundle generated cleanly).
-
----
-
-## 12. Evaluation Scenarios (Scenarios A through J)
-
-ULPF evaluates 10 operational and supervisory scenarios deterministically:
-
-| Scenario ID | Title | Expected Entity | Expected Indicator | Validation Status |
+| Port | Protocol | Service | Scope | Security Consideration |
 |---|---|---|---|---|
-| **Scenario_A** | High-severity alerts closed in < 10 seconds | `CSE-ALPHA-01` | `FAST_CASE_CLOSURE_WITHOUT_INVESTIGATION` | **PASS (100% Precision)** |
-| **Scenario_B** | Repeated alerts from same asset without remediation | `CSE-BETA-02` | `REPEATED_ALERTS_WITHOUT_REMEDIATION` | **PASS (100% Precision)** |
-| **Scenario_C** | Critical alerts without escalation evidence | `CSE-GAMMA-03` | `CRITICAL_EVENT_LACKS_ESCALATION_EVIDENCE` | **PASS (100% Precision)** |
-| **Scenario_D** | Registered active log source becoming silent | `CSE-EPSILON-05` | `SILENT_LOG_SOURCE` | **PASS (100% Precision)** |
-| **Scenario_E** | Critical asset missing expected telemetry | `CSE-DELTA-04` | `MISSING_EVENT_CATEGORY` | **PASS (100% Precision)** |
-| **Scenario_F** | One CSE significantly deviates from peer activity | `CSE-GAMMA-03` | `PEER_ACTIVITY_DEVIATION` | **PASS (100% Precision)** |
-| **Scenario_G** | Repeated/template-like investigation patterns | `CSE-ALPHA-01` | `TEMPLATE_INVESTIGATION_PATTERN` | **PASS (100% Precision)** |
-| **Scenario_H** | Sudden abnormal event-volume increase | `CSE-BETA-02` | `VOLUME_SPIKE` | **PASS (100% Precision)** |
-| **Scenario_I** | Sudden abnormal event-volume decrease | `CSE-EPSILON-05` | `VOLUME_DROP` | **PASS (100% Precision)** |
-| **Scenario_J** | Unknown log format requiring no-code onboarding | `CSE-ALPHA-01` | `UNKNOWN_VENDOR_FORMAT` | **PASS (100% Precision)** |
+| **5173** | TCP | Frontend NGINX / Vite | External | Web dashboard and operator UI. |
+| **8000** | TCP | Backend FastAPI API | External | REST API, documentation, health probe. |
+| **1514** | UDP | Syslog UDP Listener | External | RFC 3164 / 5424 unencrypted syslog. |
+| **1514** | TCP | Syslog TCP Listener | External | Octet-counted and newline-framed TCP syslog. |
+| **16514**| TCP | Syslog TLS Listener | External | Encrypted TLS 1.2+ syslog transport. |
+| **5432** | TCP | PostgreSQL Database | Loopback Only (`127.0.0.1`) | Restricted to localhost to prevent public exposure. |
 
 ---
 
-## 13. High-Capacity Performance Benchmarks
+## 12. Air-Gapped Deployment & Offline Image Transfer
 
-To execute the offline high-volume performance benchmark:
+OmniLogix is designed to operate completely offline. For deployment into restricted defense enclaves:
+
 ```bash
-python backend/app/utils/performance_benchmark.py
+# On Internet-Connected Machine:
+docker compose build
+docker save postgres:16-alpine ulpf_backend:latest ulpf_frontend:latest | gzip > omnilogix_images.tar.gz
+
+# Transfer omnilogix_images.tar.gz via approved offline media to Air-Gapped Machine:
+docker load < omnilogix_images.tar.gz
+docker compose up -d
 ```
 
-Benchmark performance summary (AMD/Intel x86_64 local hardware):
-- **Raw Ingestion & SHA-256 Hash Computation:** **> 1,000,000 events/sec**
-- **Offline Anomaly Detection (`IsolationForest`):** **~46,000 events/sec**
-- **Supervisory Alert Prioritization:** **~200,000 events/sec**
-- **8-Capability Scan Latency:** **< 0.1 ms**
-- **Backend Test Suite:** **102/102 PASSED (100% pass rate)**
-- **Frontend Production Build:** **0 TypeScript errors, 0 build warnings**
+---
+
+## 13. Verified Performance Benchmarks
+
+| Operation | 1,000 Events | 10,000 Events | 50,000 Events | 100,000 Events |
+|---|---|---|---|---|
+| **Ingestion + SHA-256 Hashing** | 1,199,904 ev/s | 1,464,043 ev/s | 1,198,808 ev/s | 1,354,059 ev/s |
+| **Decoupled Batch DB Writes** | 0.10 ms/event | 0.10 ms/event | 0.10 ms/event | 0.10 ms/event |
+| **Offline Isolation Forest Scoring**| 8,186 ev/s | 39,388 ev/s | 43,875 ev/s | 33,092 ev/s |
+| **Priority Alert Scoring** | 152,263 ev/s | 67,792 ev/s | 199,657 ev/s | 197,547 ev/s |
+| **8-Dimension Supervisory Scan** | 0.069 ms | 0.081 ms | 0.053 ms | 0.061 ms |
 
 ---
 
-## 14. Docker Quick Start
+## 14. Operational Limitations & Future Roadmap
 
-> **Air-Gapped Notice:**  
-> ULPF is designed for on-premises and air-gapped cybersecurity environments. Docker Compose provides a platform-independent deployment method for local evaluation.
-
-### Prerequisites (Zero Local Python/Node Required)
-A fresh evaluation machine requires only:
-- **Git**
-- **Docker Desktop** (or Docker Engine with Compose v2)
-*No local installation of Python, Node.js, npm, or database servers is necessary on the host.*
-
-### 1-Command Startup
-```bash
-# 1. Clone repository
-git clone <repository_url>
-cd ULPF
-
-# 2. Build and start all services
-docker compose up --build -d
-```
-
-### Access Endpoints
-| Component | Host URL | Description |
-|---|---|---|
-| **Frontend UI** | `http://localhost:5173` | React 18 / TypeScript single-page application |
-| **SIH Demonstration Workspace** | `http://localhost:5173/demo` | 1-Click interactive evaluation and scenario validation |
-| **Backend REST API** | `http://localhost:8000` | FastAPI core service |
-| **Interactive API Documentation** | `http://localhost:8000/docs` | Swagger UI (also proxied at `http://localhost:5173/docs`) |
-| **Health Check & Readiness** | `http://localhost:8000/api/v1/health` | Comprehensive subsystem readiness checks |
-
-### Ingestion Ports (Syslog Network Transport)
-| Protocol | Port | Description |
-|---|---|---|
-| **Syslog UDP** | `1514/udp` | RFC 3164 / RFC 5424 high-speed datagram listener |
-| **Syslog TCP** | `1514/tcp` | Delimited and octet-counted streaming listener |
-| **Syslog TLS** | `16514/tcp` | TLS 1.2+ encrypted syslog listener |
-
-### Stopping Services
-```bash
-# Graceful shutdown preserving database and volume data
-docker compose down
-
-# To clean up volumes as well (fresh re-initialization):
-docker compose down -v
-```
-
-### Troubleshooting
-- **Port Conflict (8000 / 5173):** Ensure no local dev servers (`uvicorn`, `vite`) are occupying ports 8000 or 5173 on the host machine before running Docker Compose.
-- **Inspect Service Logs:** Run `docker compose logs -f ulpf-backend` or `docker compose logs -f ulpf-frontend` to trace initialization events.
-- **Health Verification:** Check container status via `docker compose ps`. Services indicate `healthy` once their internal HTTP health checks pass.
+- **Single-Node vs. Distributed Clustering:** Single-node Docker deployment is `VERIFIED`. Distributed Kafka clustering and Patroni multi-node replication are `ARCHITECTURAL` and documented in `docs/SCALABLE_DEPLOYMENT_ARCHITECTURE.md`.
+- **In-Memory Queue Bounds:** The persistence queue uses a 50,000-event in-memory buffer. For sustained multi-gigabit perimeter feeds over days, external Kafka message brokers are recommended.
+- **Automated Adjudication Disclaimer:** OmniLogix produces supervisory intelligence and anomaly prioritization to assist human examiners; it does not claim autonomous incident adjudication without expert human review.
 
 ---
 
-## 15. Security & Air-Gapped Verification
+## 15. Complete Documentation Index
 
-- **Zero Cloud Egress:** Network policies enforce zero external communication. All machine learning, parsing, and analytics models execute strictly on local CPU/RAM.
-- **Cryptographic Tamper-Evidence:** Any byte change in a raw event breaks the SHA-256 verification hash upon query.
-- **No Hardcoded Secrets:** Managed through 12-factor `.env` files conforming to defense facility standards.
-- **XXE and ReDoS Protection:** XML parsers explicitly disable entity resolution and external DTDs; regexes are bounded to prevent catastrophic backtracking.
-
----
-
-## 16. Screenshots & Interface Overview
-
-| View | Path | Description |
-|---|---|---|
-| **SIH Demonstration Workspace** | `/demo` | 1-Click interactive pipeline runner with Scenarios A through J validation breakdown. |
-| **System Health & Architecture** | `/dashboard` | System status, ingestion pipeline throughput, and component readiness monitoring. |
-| **Events Explorer & Traceability** | `/events` | Universal Event Schema inspection with cryptographic SHA-256 verification and raw log audit. |
-| **No-Code Log Onboarding** | `/onboarding` | Interactive structure analysis, type inference, and field mapping for unknown vendor formats. |
-| **Security Analytics & Prioritization** | `/security-analytics` | Air-gapped IsolationForest anomaly detection and contextual alert scoring. |
-| **Multi-CSE Supervisory Intelligence** | `/supervisory` | 8-capability dimension evaluation, peer benchmarking, and forensic evidence chains. |
-
----
-
-## 17. Known Limitations
-
-- **Default Storage Fallback:** When PostgreSQL is not active, the system defaults to an isolated local SQLite database (`sqlite:///demo.db`). For enterprise deployments with millions of events, PostgreSQL 16 is recommended.
-- **Air-Gapped Pre-bundling:** When deploying to completely isolated secure facilities without Internet access, Python wheels and npm package tarballs must be transferred via authorized physical media.
-
----
-
-## 18. Team Information
-
-- **Competition:** Smart India Hackathon (SIH) 2026
-- **Problem Statement:** `SIH26156` (NTRO)
-- **Theme:** Blockchain & Cybersecurity
-- **Project:** Universal Log Pre-processing Framework (ULPF)
-- **License:** [MIT License](LICENSE)
-
+- **Final Evaluation Report:** [`docs/FINAL_SIH_EVALUATION_REPORT.md`](file:///e:/SIH%202026/ULPF/docs/FINAL_SIH_EVALUATION_REPORT.md)
+- **Judge Demo Runbook:** [`docs/JUDGE_DEMO_RUNBOOK.md`](file:///e:/SIH%202026/ULPF/docs/JUDGE_DEMO_RUNBOOK.md)
+- **Repository Readiness Audit:** [`docs/REPOSITORY_READINESS_AUDIT.md`](file:///e:/SIH%202026/ULPF/docs/REPOSITORY_READINESS_AUDIT.md)
+- **Requirement Traceability Matrix:** [`docs/FINAL_REQUIREMENT_TRACEABILITY.md`](file:///e:/SIH%202026/ULPF/docs/FINAL_REQUIREMENT_TRACEABILITY.md)
+- **Verified Capabilities Catalog:** [`docs/VERIFIED_CAPABILITIES.md`](file:///e:/SIH%202026/ULPF/docs/VERIFIED_CAPABILITIES.md)
+- **Known Operational Limitations:** [`docs/KNOWN_LIMITATIONS.md`](file:///e:/SIH%202026/ULPF/docs/KNOWN_LIMITATIONS.md)
+- **Production Deployment Hardening:** [`docs/PRODUCTION_DEPLOYMENT_HARDENING.md`](file:///e:/SIH%202026/ULPF/docs/PRODUCTION_DEPLOYMENT_HARDENING.md)
+- **Judge Defense Q&A:** [`docs/DEPLOYMENT_JUDGE_DEFENSE.md`](file:///e:/SIH%202026/ULPF/docs/DEPLOYMENT_JUDGE_DEFENSE.md)
+- **SIEM & Data Lake Integration:** [`docs/SIEM_DATA_LAKE_INTEGRATION.md`](file:///e:/SIH%202026/ULPF/docs/SIEM_DATA_LAKE_INTEGRATION.md)
+- **OmniLogix Event Contract (UES):** [`docs/OMNILOGIX_EVENT_CONTRACT.md`](file:///e:/SIH%202026/ULPF/docs/OMNILOGIX_EVENT_CONTRACT.md)

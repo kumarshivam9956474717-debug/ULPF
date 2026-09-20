@@ -2,6 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import require_roles
+from app.models.user import User
 from app.models.parser import Parser, ParserVersion
 from app.schemas.parser import ParserCreate, ParserResponse
 
@@ -17,7 +19,8 @@ router = APIRouter()
 )
 def create_parser(
     payload: ParserCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN"))
 ) -> Parser:
     existing = db.query(Parser).filter(Parser.parser_id == payload.parser_id).first()
     if existing:
@@ -61,6 +64,7 @@ def create_parser(
     description="Returns all registered parser plugins and their associated versions."
 )
 def list_parsers(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles("ADMIN", "OPERATOR", "ANALYST", "VIEWER"))
 ) -> List[Parser]:
     return db.query(Parser).order_by(Parser.created_at.desc()).all()
