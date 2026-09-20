@@ -107,57 +107,109 @@ OmniLogix directly addresses these challenges through a standalone, air-gapped c
 
 ---
 
-## 7. Quick Start (Evaluator Setup)
+## 7. Setup & Installation Instructions
 
-### Option A: Docker Compose (Recommended)
-```bash
-# 1. Clone repository
-git clone https://github.com/your-org/omnilogix.git
-cd omnilogix
+OmniLogix supports two primary deployment methods: **Docker Compose** (recommended for evaluators and judges, requires 0 host language installations) and **Local Native Setup** (for development without Docker, using automatic SQLite fallback).
 
-# 2. Configure environment from template
-cp .env.example .env
+### Prerequisites
 
-# 3. Start stack in background
-docker compose up -d
-
-# 4. Run master evaluation validator
-python tools/final_evaluation.py
-```
-- **Web UI:** `http://localhost:5173`
-- **Interactive API Documentation (Swagger):** `http://localhost:8000/docs`
-
-### Option B: Local Standalone Development (Zero Docker)
-If Docker is not running on the evaluator workstation, OmniLogix automatically falls back to its internal resilient SQLite engine:
-```bash
-# 1. Install dependencies
-pip install -r backend/requirements.txt
-cd frontend && npm install && cd ..
-
-# 2. Launch backend API server
-cd backend
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-
-# 3. In another terminal, launch frontend
-cd frontend
-npm run dev
-```
+| Component | Option A: Docker Compose | Option B: Local Native Setup |
+|---|---|---|
+| **Operating System** | Linux, Windows 10/11 (WSL2), macOS | Linux, Windows 10/11, macOS |
+| **Container Engine** | Docker Engine 24.0+ & Compose v2.20+ | Not Required |
+| **Python Runtime** | Not required on host (bundled in container) | Python 3.10+ (tested up to 3.14) |
+| **Node.js Runtime** | Not required on host (bundled in NGINX SPA) | Node.js 18+ and npm |
+| **Database** | PostgreSQL 16 (auto-launched via Docker) | Automatic SQLite fallback (`demo.db`) or PostgreSQL |
 
 ---
 
-## 8. Admin Bootstrap Instructions
+### Option A: 1-Command Docker Setup (Recommended)
 
-To bootstrap administrative access interactively:
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/kumarshivam9956474717-debug/ULPF.git
+   cd ULPF
+   ```
+
+2. **Configure Environment Variables:**
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Launch the Container Stack:**
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Access the Applications:**
+   - **Web UI & Dashboard:** [http://localhost:5173](http://localhost:5173)
+   - **Interactive API Documentation (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
+   - **Application Health Status:** [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+
+5. **Stop / Teardown Container Stack:**
+   ```bash
+   docker compose down
+   ```
+
+---
+
+### Option B: Local Native Setup (Zero Docker Required)
+
+If Docker is not running on your workstation, OmniLogix automatically falls back to an internal resilient SQLite storage engine (`sqlite:///./demo.db`):
+
+1. **Clone the Repository & Prepare Environment:**
+   ```bash
+   git clone https://github.com/kumarshivam9956474717-debug/ULPF.git
+   cd ULPF
+   cp .env.example .env
+   ```
+
+2. **Backend Setup:**
+   ```bash
+   # Create and activate virtual environment
+   python -m venv venv
+   # On Windows (PowerShell):
+   .\venv\Scripts\Activate.ps1
+   # On Linux / macOS:
+   source venv/bin/activate
+
+   # Install dependencies
+   pip install -r backend/requirements.txt
+
+   # Start FastAPI Backend Server
+   python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
+   ```
+
+3. **Frontend Setup (In a New Terminal):**
+   ```bash
+   cd ULPF/frontend
+   npm install
+   npm run dev
+   ```
+   - Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+## 8. Administrator Account Setup & Credentials
+
+OmniLogix enforces cryptographic role-based access control (RBAC). You can bootstrap the initial administrative account in two ways:
+
+### Method 1: Interactive CLI Utility
+Run the interactive user creation wizard:
 ```bash
 python tools/create_admin.py
 ```
-*Prompts for username, password, and creates an `ADMIN` role record in the database with salted Bcrypt hashing.*
+*Prompts for Username, Email, and Password, then creates a salted Bcrypt-hashed `ADMIN` account.*
 
-Alternatively, configure pre-provisioned bootstrap credentials in `.env`:
+### Method 2: Automatic Bootstrap via `.env`
+Specify bootstrap credentials directly in your `.env` file before starting the backend:
 ```env
-ADMIN_BOOTSTRAP_USERNAME=sih_admin
-ADMIN_BOOTSTRAP_PASSWORD=SuperSecretPassword2026!
+ADMIN_BOOTSTRAP_USERNAME=admin
+ADMIN_BOOTSTRAP_PASSWORD=AdminStrongPassword2026!
+ADMIN_BOOTSTRAP_EMAIL=admin@omnilogix.local
 ```
+The backend automatically provisions this user with the `ADMIN` role upon first initialization.
+
 
 ---
 
