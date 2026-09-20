@@ -54,6 +54,59 @@ def login(
     )
 
 
+@router.post(
+    "/register",
+    response_model=Token,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new user account",
+    description="Creates a new local user account and automatically signs them in, returning a JWT access token."
+)
+def register(
+    payload: UserCreate,
+    db: Session = Depends(get_db)
+) -> Token:
+    # Check if username exists
+    existing_user = db.query(User).filter(User.username == payload.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with username '{payload.username}' already exists."
+        )
+
+    # Check if email exists
+    if payload.email:
+        existing_email = db.query(User).filter(User.email == payload.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with email '{payload.email}' already exists."
+            )
+
+    role_str = payload.role.value if hasattr(payload.role, "value") else str(payload.role)
+    hashed_pw = get_password_hash(payload.password)
+    new_user = User(
+        username=payload.username,
+        email=payload.email,
+        hashed_password=hashed_pw,
+        role=role_str,
+        is_active=True
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    token = create_access_token(
+        data={"sub": new_user.username, "role": new_user.role}
+    )
+
+    return Token(
+        access_token=token,
+        token_type="bearer",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=new_user
+    )
+
+
 @router.get(
     "/me",
     response_model=UserResponse,

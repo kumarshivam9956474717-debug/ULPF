@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import {
   UserProfile,
   loginApi,
+  registerApi,
   fetchCurrentUser,
   getAuthToken,
   setAuthSession,
@@ -14,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
+  register: (payload: { username: string; password: string; email?: string; role?: 'ADMIN' | 'ANALYST' | 'OPERATOR' | 'VIEWER' }) => Promise<void>;
   logout: () => void;
   hasRole: (...roles: string[]) => boolean;
 }
@@ -85,6 +87,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const register = async (payload: { username: string; password: string; email?: string; role?: 'ADMIN' | 'ANALYST' | 'OPERATOR' | 'VIEWER' }) => {
+    setIsLoading(true);
+    try {
+      const resp = await registerApi(payload);
+      setAuthSession(resp.access_token, resp.user);
+      setToken(resp.access_token);
+      setUser(resp.user);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     clearAuthSession();
     setToken(null);
@@ -105,6 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         isAuthenticated: !!token && !!user,
         login,
+        register,
         logout,
         hasRole
       }}

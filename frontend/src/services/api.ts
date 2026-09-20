@@ -1330,6 +1330,24 @@ export async function loginApi(username: string, password: string): Promise<Auth
   return response.json();
 }
 
+export async function registerApi(payload: {
+  username: string;
+  password: string;
+  email?: string;
+  role?: 'ADMIN' | 'ANALYST' | 'OPERATOR' | 'VIEWER';
+}): Promise<AuthTokenResponse> {
+  const response = await fetch('/api/v1/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Registration failed' }));
+    throw new Error(err.detail || 'Registration failed. Please check your credentials.');
+  }
+  return response.json();
+}
+
 export async function fetchCurrentUser(): Promise<UserProfile> {
   const response = await fetch('/api/v1/auth/me');
   if (!response.ok) {
